@@ -145,10 +145,12 @@ std::string readFileIntoString(const std::string& path)
 {
     std::ifstream input_file(path);
 
-    if (!input_file.is_open()) {
+    if (!input_file.is_open()) 
+    {
         std::cerr << "Could not open the file - '" << path << "'\n";
         exit(EXIT_FAILURE);
     }
+
     return std::string((std::istreambuf_iterator<char>(input_file)), std::istreambuf_iterator<char>());
 }
 
@@ -157,14 +159,17 @@ std::string readFileIntoString(const std::string& path)
 int main(int argc, char** argv)
 {
     std::string code = {};
-    std::filesystem::path cwd = std::filesystem::current_path() / "Memory.au3";
 
     switch (argc)
     {
         case 0:
         case 1:
-            code = readFileIntoString(cwd.string());
+            {
+                std::filesystem::path cwd = std::filesystem::current_path() / "Memory.au3";
+                code = readFileIntoString(cwd.string());
+            }
             break;
+
         default:
             code = readFileIntoString(argv[1]);
             break;
@@ -172,20 +177,49 @@ int main(int argc, char** argv)
 
     Au3::Tokenizer tokenizer(code.c_str());
 
+
+
+
+    // just some test / playground of how it could be used.
+
+    std::vector<std::vector<Au3::Token>> functions;
+
     while (true)
     {
         auto token = tokenizer.Next();
-        auto content = token.GetContent();
+        if (token.Is(Au3::Kind::Keyword) && token.GetContentLower() == "func")
+        {
+            std::vector<Au3::Token> function;
+            do
+            {
+                function.push_back(token);
+                if (token.Is(Au3::Kind::Keyword) && token.GetContentLower() == "endfunc")
+                {
+                    functions.push_back(function);
+                    break;
+                }
 
-        replace_all(content, "\t", "\\t");
-        replace_all(content, "\n", "\\n");
+                if (token.IsOneOf(Au3::Kind::End, Au3::Kind::Error))
+                    break;
 
-        std::cout << token.GetLine() << ": " << GetKindName(token.GetKind()) << " = '" << content << "'" << std::endl;
+                token = tokenizer.Next();
+
+            } while (true);
+
+        }
 
         if (token.IsOneOf(Au3::Kind::End, Au3::Kind::Error))
             break;
-
     }
     std::cout << "Lines: " << tokenizer.GetLine() << "\n";
+    std::cout << "Functions:\n";
     
+    for (auto function : functions)
+    {
+        for (auto token : function)
+        {
+            std::cout << token.GetContent();
+        }
+        std::cout << "\n\n";
+    }
 }
