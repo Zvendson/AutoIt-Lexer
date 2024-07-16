@@ -161,6 +161,13 @@ namespace
     }
 
 
+    std::string upper(std::string s)
+    {
+        std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return std::toupper(c); });
+        return s;
+    }
+
+
     bool is_au3_keyword(std::string& str)
     {
         auto cmp = lower(str);
@@ -262,6 +269,21 @@ namespace Au3
         m_End = begin;
     }
 
+    Token Tokenizer::Peek() noexcept
+    {
+        auto current = m_Current;
+        auto cursor  = m_Cursor;
+        auto line    = m_Line;
+
+        auto peek = Next();
+
+        m_Current = current;
+        m_Cursor  = cursor;
+        m_Line    = line;
+
+        return peek;
+    }
+
     Token Tokenizer::Next() noexcept
     {
         char curr = GetCurrent();
@@ -279,7 +301,7 @@ namespace Au3
         }
 
 
-        auto next = PeekNext();
+        auto next = PeekNextChar();
         // Hex
         if (curr == '0' && next == 'x')
         {
@@ -478,6 +500,20 @@ namespace Au3
         return std::string(start, m_Cursor);
     }
 
+    void Tokenizer::Reset() noexcept
+    {
+        m_Cursor  = m_Begin; 
+        m_Line    = 1; 
+        m_Current = {};
+    }
+
+    void Tokenizer::Set(Token& token) noexcept
+    {
+        m_Cursor  = m_Begin + token.GetStart();
+        m_Line    = token.GetLine(); 
+        m_Current = token;
+    }
+
     Token Tokenizer::MakeSpace() noexcept
     {
         const char* start = m_Cursor;
@@ -649,6 +685,16 @@ namespace Au3
         }
 
         return Token(Kind::Error, m_Line, m_Begin, m_Cursor, 1);
+    }
+
+    const std::string Token::GetContentLower() const noexcept
+    {
+        return lower(m_Content);
+    }
+
+    const std::string Token::GetContentUpper() const noexcept
+    {
+        return upper(m_Content);
     }
 
 }

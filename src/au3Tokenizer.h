@@ -14,7 +14,6 @@ namespace Au3
         Decimals,
         Hex,
         Keyword,
-
         Word,
         OpenedParen,
         ClosedParen,
@@ -48,6 +47,8 @@ namespace Au3
     class Token
     {
     public:
+        Token() : m_Kind(Kind::Start), m_Line(1), m_Content({}), m_Start(0), m_End(0) {}
+
         Token(Kind kind, size_t line, const char* begin, const char* cursor, std::size_t len) noexcept
         {
             m_Line = line;
@@ -66,11 +67,13 @@ namespace Au3
             m_Content = { cursor, (m_End - m_Start) };
         }
 
-        Kind               GetKind()    const noexcept { return m_Kind; }
-        size_t             GetStart()   const noexcept { return m_Start; }
-        size_t             GetEnd()     const noexcept { return m_End; }
-        size_t             GetLine()    const noexcept { return m_Line; }
-        const std::string& GetContent() const noexcept { return m_Content; }
+        Kind               GetKind()         const noexcept { return m_Kind; }
+        size_t             GetStart()        const noexcept { return m_Start; }
+        size_t             GetEnd()          const noexcept { return m_End; }
+        size_t             GetLine()         const noexcept { return m_Line; }
+        const std::string& GetContent()      const noexcept { return m_Content; }
+        const std::string  GetContentLower() const noexcept;
+        const std::string  GetContentUpper() const noexcept;
 
         bool Is(Kind kind)             const noexcept { return m_Kind == kind; }
         bool IsNot(Kind kind)          const noexcept { return m_Kind != kind; }
@@ -83,7 +86,7 @@ namespace Au3
         }
 
     private:
-        Kind        m_Kind {};
+        Kind        m_Kind = Kind::Start;
         std::string m_Content {};
         size_t      m_Start = 0;
         size_t      m_End = 0;
@@ -98,10 +101,13 @@ namespace Au3
         Tokenizer(const char* begin) noexcept;
 
         //Todo: Previous
-        Token  Next()     noexcept;
-        Token  Next(Kind) noexcept;
-        Token  Current()  noexcept { return m_Current; };
-        size_t GetLine()  noexcept { return m_Line; }
+        Token  Peek()            noexcept;
+        Token  Next()            noexcept;
+        Token  Next(Kind)        noexcept;
+        Token  Current()         noexcept { return m_Current; };
+        size_t GetLine()         noexcept { return m_Line; }
+        void   Reset()           noexcept;
+        void   Set(Token& token) noexcept;
 
     protected:
         Token MakeSpace()        noexcept;
@@ -121,8 +127,8 @@ namespace Au3
 
         char        GetCurrent()     const noexcept { return *m_Cursor; }
         char        GetNext()              noexcept { return *m_Cursor++; }
-        char        PeekNext()             noexcept { return *(m_Cursor + 1); }
-        char        Peek(size_t len)       noexcept { return *(m_Cursor + len); }
+        char        PeekNextChar()         noexcept { return *(m_Cursor + 1); }
+        char        PeekChar(size_t len)   noexcept { return *(m_Cursor + len); }
         std::string PeekLine()             noexcept;
         std::string NextLine()             noexcept;
 
@@ -131,7 +137,7 @@ namespace Au3
         const char* m_Cursor  = nullptr;
         const char* m_End     = nullptr;
         size_t      m_Line    = 1;
-        Token       m_Current = { Kind::Start, 1, nullptr, nullptr, nullptr };
+        Token       m_Current = {};
     };
 
 }
