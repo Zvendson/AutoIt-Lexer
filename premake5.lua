@@ -17,33 +17,31 @@ workspace "Lexer"
 outputdir = "%{cfg.buildcfg}"
 target_dir = "%{wks.location.name}"
 
-project "Lexer"
+project "AutoIt"
         kind "ConsoleApp"
         language "C++"
         cppdialect "C++20"
         staticruntime "off"
 
         targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
-	    objdir ("%{wks.location}/bin-int/" .. outputdir .. "/%{prj.name}")
+	objdir ("%{wks.location}/bin-int/" .. outputdir .. "/%{prj.name}")
 
         files
         {
-                "Lexer/**.h",
-                "Lexer/**.cpp"
+                "src/**.h",
+                "src/**.cpp"
         }
 
         includedirs
         {
-                "Lexer"
+                "src"
         }
 
         filter "configurations:Debug"
-                defines "SB_DEBUG"
                 runtime "Debug"
                 symbols "on"
 
         filter "configurations:Release"
-                defines "SB_RELEASE"
                 runtime "Release"
                 optimize "on"
                 
