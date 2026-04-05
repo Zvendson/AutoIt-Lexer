@@ -33,6 +33,8 @@ TextEditor::TextEditor()
 	, mWithinRender(false)
 	, mScrollToCursor(false)
 	, mScrollToBottom(false)
+	, mScrollToLine(-1)
+	, mScrollToLinePadding(0)
 	, mScrollToTop(false)
 	, mTextChanged(false)
 	, mFocused(false)
@@ -160,6 +162,29 @@ static int UTF8CharLength(TextEditor::Char c)
 	else if ((c & 0xE0) == 0xC0)
 		return 2;
 	return 1;
+}
+
+static int UTF8SafeCharLength(const TextEditor::Line& line, int index)
+{
+	if (index < 0 || static_cast<std::size_t>(index) >= line.size())
+		return 1;
+
+	const int expected = UTF8CharLength(line[static_cast<std::size_t>(index)].mChar);
+	if (expected <= 1)
+		return 1;
+
+	const int remaining = static_cast<int>(line.size()) - index;
+	if (expected > remaining)
+		return 1;
+
+	for (int offset = 1; offset < expected; ++offset)
+	{
+		const auto continuation = line[static_cast<std::size_t>(index + offset)].mChar;
+		if ((continuation & 0xC0) != 0x80)
+			return 1;
+	}
+
+	return expected;
 }
 
 // "Borrowed" from ImGui source
@@ -519,7 +544,7 @@ int TextEditor::GetCharacterIndex(const Coordinates& aCoordinates) const
 			c = (c / mTabSize) * mTabSize + mTabSize;
 		else
 			++c;
-		i += UTF8CharLength(line[i].mChar);
+		i += UTF8SafeCharLength(line, i);
 	}
 	return i;
 }
@@ -534,7 +559,7 @@ int TextEditor::GetCharacterColumn(int aLine, int aIndex) const
 	while (i < aIndex && i < (int)line.size())
 	{
 		auto c = line[i].mChar;
-		i += UTF8CharLength(c);
+		i += UTF8SafeCharLength(line, i);
 		if (c == '\t')
 			col = (col / mTabSize) * mTabSize + mTabSize;
 		else
@@ -550,7 +575,7 @@ int TextEditor::GetLineCharacterCount(int aLine) const
 	auto& line = mLines[aLine];
 	int c = 0;
 	for (unsigned i = 0; i < line.size(); c++)
-		i += UTF8CharLength(line[i].mChar);
+		i += UTF8SafeCharLength(line, static_cast<int>(i));
 	return c;
 }
 
@@ -567,7 +592,7 @@ int TextEditor::GetLineMaxColumn(int aLine) const
 			col = (col / mTabSize) * mTabSize + mTabSize;
 		else
 			col++;
-		i += UTF8CharLength(c);
+		i += UTF8SafeCharLength(line, static_cast<int>(i));
 	}
 	return col;
 }
@@ -1090,7 +1115,7 @@ void TextEditor::Render()
 				}
 				else
 				{
-					auto l = UTF8CharLength(glyph.mChar);
+					auto l = UTF8SafeCharLength(line, i);
 					while (l-- > 0)
 						mLineBuffer.push_back(line[i++].mChar);
 				}
@@ -1141,6 +1166,14 @@ void TextEditor::Render()
 	{
 		mScrollToBottom = false;
 		ImGui::SetScrollY(ImGui::GetScrollMaxY());
+	}
+
+	if (mScrollToLine >= 0)
+	{
+		const int targetTopLine = std::max(0, mScrollToLine - mScrollToLinePadding);
+		ImGui::SetScrollY(std::max(0.0f, targetTopLine * mCharAdvance.y));
+		mScrollToLine = -1;
+		mScrollToLinePadding = 0;
 	}
 
 	if (mScrollToCursor)
@@ -1438,6 +1471,14 @@ void TextEditor::RequestScrollToBottom()
 	mScrollToBottom = true;
 }
 
+void TextEditor::RequestScrollToLine(int aLine, int aLinesAbove)
+{
+	mScrollToTop = false;
+	mScrollToBottom = false;
+	mScrollToLine = std::max(0, aLine);
+	mScrollToLinePadding = std::max(0, aLinesAbove);
+}
+
 void TextEditor::SetTextLines(const std::vector<std::string> & aLines)
 {
 	mColorizerEnabled = true;
@@ -1685,9 +1726,10 @@ void TextEditor::SetColorizerEnable(bool aValue)
 
 void TextEditor::SetCursorPosition(const Coordinates & aPosition)
 {
-	if (mState.mCursorPosition != aPosition)
+	const auto sanitized = SanitizeCoordinates(aPosition);
+	if (mState.mCursorPosition != sanitized)
 	{
-		mState.mCursorPosition = aPosition;
+		mState.mCursorPosition = sanitized;
 		mCursorPositionChanged = true;
 		EnsureCursorVisible();
 	}
@@ -2722,7 +2764,7 @@ float TextEditor::TextDistanceToLineStart(const Coordinates& aFrom) const
 		}
 		else
 		{
-			auto d = UTF8CharLength(line[it].mChar);
+			auto d = UTF8SafeCharLength(line, static_cast<int>(it));
 			char tempCString[7];
 			int i = 0;
 			for (; i < 6 && d-- > 0 && it < (int)line.size(); i++, it++)

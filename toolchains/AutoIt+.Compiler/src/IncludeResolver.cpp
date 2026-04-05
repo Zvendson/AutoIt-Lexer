@@ -13,13 +13,26 @@
 
 namespace
 {
+    std::string StripUtf8Bom(std::string text)
+    {
+        if (text.size() >= 3U
+            && static_cast<unsigned char>(text[0]) == 0xEF
+            && static_cast<unsigned char>(text[1]) == 0xBB
+            && static_cast<unsigned char>(text[2]) == 0xBF)
+        {
+            text.erase(0, 3);
+        }
+
+        return text;
+    }
+
     std::string ReadFile(const std::filesystem::path& path)
     {
-        std::ifstream input(path);
+        std::ifstream input(path, std::ios::binary);
         if (!input.is_open())
             throw std::runtime_error("Could not open source file: " + path.string());
 
-        return std::string((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
+        return StripUtf8Bom(std::string((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>()));
     }
 
     std::string Trim(std::string value)

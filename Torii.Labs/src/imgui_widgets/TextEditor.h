@@ -247,6 +247,7 @@ public:
 	inline void SetShowLineNumbers(bool aValue) { mShowLineNumbers = aValue; }
 	inline bool IsShowingLineNumbers() const { return mShowLineNumbers; }
 	void RequestScrollToBottom();
+	void RequestScrollToLine(int aLine, int aLinesAbove = 0);
 
 	void SetTabSize(int aValue);
 	inline int GetTabSize() const { return mTabSize; }
@@ -380,6 +381,8 @@ private:
 	bool mWithinRender;
 	bool mScrollToCursor;
 	bool mScrollToBottom;
+	int mScrollToLine;
+	int mScrollToLinePadding;
 	bool mScrollToTop;
 	bool mTextChanged;
 	bool mFocused;
