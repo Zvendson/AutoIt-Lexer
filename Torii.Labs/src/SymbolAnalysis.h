@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -46,5 +47,14 @@ namespace AutoItPlus::Editor
         std::vector<ExternalFileSymbols> externals;
     };
 
+    struct OutlineProjectContext
+    {
+        std::filesystem::path rootDirectory;
+    };
+
     OutlineData AnalyzeOutline(const EditorState& state, const DocumentState& document);
+    OutlineData AnalyzeOutline(
+        const std::optional<OutlineProjectContext>& project,
+        const std::filesystem::path& documentPath,
+        const std::string& text);
 }

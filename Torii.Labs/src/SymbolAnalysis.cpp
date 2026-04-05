@@ -228,69 +228,27 @@ namespace
 
 namespace AutoItPlus::Editor
 {
-    OutlineData AnalyzeOutline(const EditorState& state, const DocumentState& document)
+    OutlineData AnalyzeOutline(
+        const std::optional<OutlineProjectContext>&,
+        const std::filesystem::path&,
+        const std::string& text)
     {
         OutlineData outline;
-        const auto currentSymbols = ParseSymbols(document.editor->GetText());
+        const auto currentSymbols = ParseSymbols(text);
         outline.functions = currentSymbols.functions;
         outline.globals = currentSymbols.globals;
         outline.constants = currentSymbols.constants;
         outline.includes = currentSymbols.includes;
 
-        if (!state.project.has_value())
-            return outline;
-
-        const auto sourceRoot = std::filesystem::exists(state.project->rootDirectory / "code")
-            ? state.project->rootDirectory / "code"
-            : state.project->rootDirectory;
-
-        std::map<std::filesystem::path, ExternalFileSymbols> externalsByFile;
-        for (const auto& entry : std::filesystem::recursive_directory_iterator(sourceRoot))
-        {
-            if (!entry.is_regular_file())
-                continue;
-
-            const auto extension = entry.path().extension().string();
-            if (extension != kSourceExtension && extension != ".au3")
-                continue;
-
-            if (std::filesystem::equivalent(entry.path(), document.path))
-                continue;
-
-            ParsedFileSymbols otherSymbols;
-            try
-            {
-                otherSymbols = ParseSymbols(ReadTextFile(entry.path()));
-            }
-            catch (...)
-            {
-                continue;
-            }
-
-            ExternalFileSymbols external;
-            external.sourcePath = entry.path();
-
-            for (const auto& function : otherSymbols.functions)
-            {
-                const auto lowered = AutoItPreprocessor::Tokenizer::ToLowerCopy(function.name);
-                if (currentSymbols.usedFunctions.contains(lowered) && !currentSymbols.localFunctions.contains(lowered))
-                    external.functions.push_back({function.name, function.line});
-            }
-
-            for (const auto& variable : otherSymbols.globals)
-            {
-                const auto lowered = AutoItPreprocessor::Tokenizer::ToLowerCopy(variable.name);
-                if (currentSymbols.usedVariables.contains(lowered) && !currentSymbols.localGlobals.contains(lowered))
-                    external.variables.push_back(variable);
-            }
-
-            if (!external.functions.empty() || !external.variables.empty())
-                externalsByFile.emplace(entry.path(), std::move(external));
-        }
-
-        for (auto& [_, external] : externalsByFile)
-            outline.externals.push_back(std::move(external));
-
         return outline;
+    }
+
+    OutlineData AnalyzeOutline(const EditorState& state, const DocumentState& document)
+    {
+        std::optional<OutlineProjectContext> projectContext;
+        if (state.project.has_value())
+            projectContext = OutlineProjectContext{ state.project->rootDirectory };
+
+        return AnalyzeOutline(projectContext, document.path, document.editor->GetText());
     }
 }

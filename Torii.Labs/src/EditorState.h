@@ -181,8 +181,12 @@ namespace AutoItPlus::Editor
         bool showWhitespace = false;
         bool previewDirty = true;
         bool outlineDirty = true;
+        bool outlinePending = false;
+        std::uint64_t outlineRevision = 0;
+        std::uint64_t outlineTaskRevision = 0;
         double lastEditTime = 0.0;
         OutlineData outline;
+        std::future<OutlineData> outlineTask;
     };
 
     struct ProjectState
@@ -201,6 +205,14 @@ namespace AutoItPlus::Editor
     {
         bool show = false;
         std::string mainFilePath;
+    };
+
+    struct ProjectTreeNode
+    {
+        std::filesystem::path path;
+        std::string name;
+        bool isDirectory = false;
+        std::vector<ProjectTreeNode> children;
     };
 
     struct FileActionState
@@ -265,6 +277,10 @@ namespace AutoItPlus::Editor
         bool requestFocusCurrentEditor = false;
         EditorPreferences preferences;
         ProjectSettingsDialogState projectSettingsDialog;
+        std::vector<ProjectTreeNode> projectTree;
+        std::future<std::vector<ProjectTreeNode>> projectTreeTask;
+        std::filesystem::path projectTreeRoot;
+        bool projectTreeLoading = false;
         std::unordered_map<std::string, std::string> shortcutOverrides;
         std::unordered_map<std::string, std::string> shortcutEditBuffers;
         HotkeyManager hotkeys;

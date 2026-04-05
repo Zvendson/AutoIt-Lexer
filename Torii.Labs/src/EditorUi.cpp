@@ -35,6 +35,7 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <chrono>
 #include <cmath>
 #include <cstdio>
 #include <cstdint>
@@ -1026,7 +1027,9 @@ namespace
 
     void JumpToLine(DocumentState& document, int line)
     {
-        document.editor->SetCursorPosition(TextEditor::Coordinates(std::max(0, line - 1), 0));
+        const int targetLine = std::max(0, line - 1);
+        document.editor->SetCursorPosition(TextEditor::Coordinates(targetLine, 0));
+        document.editor->RequestScrollToLine(targetLine, 4);
     }
 
     void SetUiStatus(EditorState& state, const std::string& message);
@@ -1233,6 +1236,66 @@ namespace
 
         const auto first = *relativePath.begin();
         return first == ".git" || first == "build" || first == ".autoit";
+    }
+
+    std::vector<ProjectTreeNode> BuildProjectTree(const ProjectState& project, const std::filesystem::path& path)
+    {
+        std::vector<ProjectTreeNode> nodes;
+        std::vector<std::filesystem::directory_entry> entries;
+        for (const auto& entry : std::filesystem::directory_iterator(path))
+        {
+            if (ShouldHideProjectPath(project, entry.path()))
+                continue;
+            entries.push_back(entry);
+        }
+
+        std::sort(entries.begin(), entries.end(), [](const auto& left, const auto& right) {
+            if (left.is_directory() != right.is_directory())
+                return left.is_directory() > right.is_directory();
+            return left.path().filename().string() < right.path().filename().string();
+        });
+
+        nodes.reserve(entries.size());
+        for (const auto& entry : entries)
+        {
+            ProjectTreeNode node;
+            node.path = entry.path();
+            node.name = entry.path().filename().empty() ? entry.path().string() : entry.path().filename().string();
+            node.isDirectory = entry.is_directory();
+            if (node.isDirectory)
+                node.children = BuildProjectTree(project, entry.path());
+            nodes.push_back(std::move(node));
+        }
+
+        return nodes;
+    }
+
+    void RequestProjectTreeRefresh(EditorState& state)
+    {
+        if (!state.project.has_value() || state.projectTreeLoading)
+            return;
+
+        const auto sourceRoot = std::filesystem::exists(state.project->rootDirectory / "code")
+            ? state.project->rootDirectory / "code"
+            : state.project->rootDirectory;
+        state.projectTreeRoot = sourceRoot;
+        state.projectTreeLoading = true;
+        const auto project = *state.project;
+        state.projectTreeTask = std::async(std::launch::async, [project, sourceRoot]() {
+            return BuildProjectTree(project, sourceRoot);
+        });
+    }
+
+    void PollProjectTreeRefresh(EditorState& state)
+    {
+        if (!state.projectTreeLoading || !state.projectTreeTask.valid())
+            return;
+
+        if (state.projectTreeTask.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
+            return;
+
+        state.projectTree = state.projectTreeTask.get();
+        state.projectTreeLoading = false;
     }
 
     void DrawPreferences(EditorState& state)
@@ -1726,6 +1789,8 @@ namespace
                 WriteTextFile(targetPath, "");
                 if (state.fileAction.openAfterCreate && IsEditableProjectFile(targetPath))
                     state.requestedOpenPath = targetPath;
+                state.projectTree.clear();
+                state.projectTreeRoot.clear();
                 SetUiStatus(state, "Created " + targetPath.string());
                 finish();
                 ImGui::CloseCurrentPopup();
@@ -1747,6 +1812,8 @@ namespace
             {
                 const auto targetPath = makeAbsoluteTarget();
                 std::filesystem::create_directories(targetPath);
+                state.projectTree.clear();
+                state.projectTreeRoot.clear();
                 SetUiStatus(state, "Created " + targetPath.string());
                 finish();
                 ImGui::CloseCurrentPopup();
@@ -1781,6 +1848,8 @@ namespace
                     state.project->mainFilePath = targetPath;
                 if (state.selectedProjectPath == state.fileAction.sourcePath)
                     state.selectedProjectPath = targetPath;
+                state.projectTree.clear();
+                state.projectTreeRoot.clear();
                 SaveProjectWorkspace(state);
                 SetUiStatus(state, "Renamed to " + targetPath.string());
                 finish();
@@ -1803,6 +1872,8 @@ namespace
             {
                 const auto targetPath = makeAbsoluteTarget();
                 CopyPathRecursively(state.fileAction.sourcePath, targetPath);
+                state.projectTree.clear();
+                state.projectTreeRoot.clear();
                 SetUiStatus(state, "Copied to " + targetPath.string());
                 finish();
                 ImGui::CloseCurrentPopup();
@@ -1826,6 +1897,8 @@ namespace
                 CopyPathRecursively(state.fileAction.sourcePath, targetPath);
                 if (IsEditableProjectFile(targetPath))
                     state.requestedOpenPath = targetPath;
+                state.projectTree.clear();
+                state.projectTreeRoot.clear();
                 SetUiStatus(state, "Duplicated to " + targetPath.string());
                 finish();
                 ImGui::CloseCurrentPopup();
@@ -1858,6 +1931,8 @@ namespace
                 if (const auto existingIndex = FindDocumentIndexByPath(state, state.fileAction.sourcePath))
                     CloseDocument(state, *existingIndex);
 
+                state.projectTree.clear();
+                state.projectTreeRoot.clear();
                 finish();
                 ImGui::CloseCurrentPopup();
             }
@@ -2205,28 +2280,15 @@ namespace
         state.activateDocumentIndex.reset();
     }
 
-    void DrawProjectTreeNode(EditorState& state, const std::filesystem::path& path, int depth)
+    void DrawProjectTreeNode(EditorState& state, const ProjectTreeNode& node, int depth)
     {
-        const bool isDirectory = std::filesystem::is_directory(path);
-        const auto name = path.filename().empty() ? path.string() : path.filename().string();
+        const auto& path = node.path;
+        const bool isDirectory = node.isDirectory;
+        const auto& name = node.name;
         const bool isSelected = state.selectedProjectPath.has_value() && *state.selectedProjectPath == path;
 
         if (isDirectory)
         {
-            std::vector<std::filesystem::directory_entry> entries;
-            for (const auto& entry : std::filesystem::directory_iterator(path))
-            {
-                if (ShouldHideProjectPath(*state.project, entry.path()))
-                    continue;
-                entries.push_back(entry);
-            }
-
-            std::sort(entries.begin(), entries.end(), [](const auto& left, const auto& right) {
-                if (left.is_directory() != right.is_directory())
-                    return left.is_directory() > right.is_directory();
-                return left.path().filename().string() < right.path().filename().string();
-            });
-
             const FileTreeRowResult row = DrawFileTreeRow(
                 path.string(),
                 name,
@@ -2268,8 +2330,8 @@ namespace
 
             if (row.open)
             {
-                for (const auto& entry : entries)
-                    DrawProjectTreeNode(state, entry.path(), depth + 1);
+                for (const auto& child : node.children)
+                    DrawProjectTreeNode(state, child, depth + 1);
             }
             return;
         }
@@ -2325,6 +2387,7 @@ namespace
 
             if (state.project.has_value())
             {
+                PollProjectTreeRefresh(state);
                 DrawSectionHeader("window-sidebar", state.project->name.c_str(), nullptr, icons.iconPrimary);
                 ImGui::TextDisabled("%s", state.project->rootDirectory.string().c_str());
                 ImGui::Spacing();
@@ -2349,20 +2412,17 @@ namespace
                 const auto sourceRoot = std::filesystem::exists(state.project->rootDirectory / "code")
                     ? state.project->rootDirectory / "code"
                     : state.project->rootDirectory;
-                std::vector<std::filesystem::directory_entry> entries;
-                for (const auto& entry : std::filesystem::directory_iterator(sourceRoot))
+                if (state.projectTreeRoot != sourceRoot && !state.projectTreeLoading)
                 {
-                    if (ShouldHideProjectPath(*state.project, entry.path()))
-                        continue;
-                    entries.push_back(entry);
+                    state.projectTree.clear();
+                    RequestProjectTreeRefresh(state);
                 }
-                std::sort(entries.begin(), entries.end(), [](const auto& left, const auto& right) {
-                    if (left.is_directory() != right.is_directory())
-                        return left.is_directory() > right.is_directory();
-                    return left.path().filename().string() < right.path().filename().string();
-                });
-                for (const auto& entry : entries)
-                    DrawProjectTreeNode(state, entry.path(), 0);
+
+                if (state.projectTreeLoading)
+                    ImGui::TextDisabled("Loading project tree...");
+
+                for (const auto& entry : state.projectTree)
+                    DrawProjectTreeNode(state, entry, 0);
             }
             else
             {
@@ -2421,6 +2481,8 @@ namespace
             const auto outlineSubtitle = document.path.filename().string();
             DrawSectionHeader("symbol-misc", "Symbols", &outlineSubtitle, icons.iconNeutral);
             ImGui::Separator();
+            if (document.outlinePending)
+                ImGui::TextDisabled("Refreshing symbols...");
             auto drawSymbolLeaf = [&](const std::string& id, const std::string& label, int depth, const char* iconName, const ImVec4& color, int line, std::function<void(const FileTreeRowResult&)> onActivate = {}) {
                 const FileTreeRowResult row = DrawFileTreeRow(id, label, depth, false, false, false, iconName, iconName, color);
                 if (row.clicked || row.doubleClicked)

@@ -23,6 +23,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <future>
+#include <thread>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -92,6 +93,69 @@ namespace
 
         const auto end = value.find_last_not_of(" \t\r\n");
         return value.substr(begin, end - begin + 1U);
+    }
+
+    std::string SanitizeUtf8Lossy(const std::string& text)
+    {
+        std::string sanitized;
+        sanitized.reserve(text.size());
+
+        for (std::size_t index = 0; index < text.size();)
+        {
+            const unsigned char ch = static_cast<unsigned char>(text[index]);
+            std::size_t length = 0;
+            if (ch <= 0x7F)
+                length = 1;
+            else if ((ch & 0xE0) == 0xC0)
+                length = 2;
+            else if ((ch & 0xF0) == 0xE0)
+                length = 3;
+            else if ((ch & 0xF8) == 0xF0)
+                length = 4;
+            else
+            {
+                ++index;
+                continue;
+            }
+
+            if (index + length > text.size())
+                break;
+
+            bool valid = true;
+            for (std::size_t continuation = 1; continuation < length; ++continuation)
+            {
+                const unsigned char next = static_cast<unsigned char>(text[index + continuation]);
+                if ((next & 0xC0) != 0x80)
+                {
+                    valid = false;
+                    break;
+                }
+            }
+
+            if (!valid)
+            {
+                ++index;
+                continue;
+            }
+
+            sanitized.append(text, index, length);
+            index += length;
+        }
+
+        return sanitized;
+    }
+
+    std::string StripUtf8Bom(std::string text)
+    {
+        if (text.size() >= 3U
+            && static_cast<unsigned char>(text[0]) == 0xEF
+            && static_cast<unsigned char>(text[1]) == 0xBB
+            && static_cast<unsigned char>(text[2]) == 0xBF)
+        {
+            text.erase(0, 3);
+        }
+
+        return text;
     }
 
     std::string TrimEmptyBoundaryLines(const std::string& text)
@@ -252,7 +316,7 @@ namespace AutoItPlus::Editor
         if (!input.is_open())
             throw std::runtime_error("Could not open file: " + path.string());
 
-        return std::string((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
+        return StripUtf8Bom(std::string((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>()));
     }
 
     void WriteTextFile(const std::filesystem::path& path, const std::string& text)
@@ -506,6 +570,7 @@ namespace AutoItPlus::Editor
         document.editor->SetCursorPosition(cursor);
         document.previewDirty = true;
         document.outlineDirty = true;
+        ++document.outlineRevision;
         document.dirty = true;
     }
 
@@ -518,6 +583,7 @@ namespace AutoItPlus::Editor
             {
                 document.dirty = true;
                 document.outlineDirty = true;
+                ++document.outlineRevision;
                 document.lastEditTime = currentTime;
                 document.status = "Modified.";
                 document.lastSyncedText = currentText;
@@ -527,11 +593,36 @@ namespace AutoItPlus::Editor
 
     void RefreshOutline(EditorState& state, DocumentState& document)
     {
-        if (!document.outlineDirty)
+        if (document.outlinePending && document.outlineTask.valid())
+        {
+            if (document.outlineTask.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+            {
+                auto outline = document.outlineTask.get();
+                document.outlinePending = false;
+                if (document.outlineTaskRevision == document.outlineRevision)
+                {
+                    document.outline = std::move(outline);
+                    document.outlineDirty = false;
+                }
+            }
+        }
+
+        if (!document.outlineDirty || document.outlinePending)
             return;
 
-        document.outline = AnalyzeOutline(state, document);
-        document.outlineDirty = false;
+        std::optional<OutlineProjectContext> projectContext;
+        if (state.project.has_value())
+            projectContext = OutlineProjectContext{ state.project->rootDirectory };
+
+        const auto documentPath = document.path;
+        const auto documentText = document.editor->GetText();
+        document.outlineTaskRevision = document.outlineRevision;
+        document.outlinePending = true;
+        document.outlineTask = std::async(
+            std::launch::async,
+            [projectContext = std::move(projectContext), documentPath, documentText]() {
+                return AnalyzeOutline(projectContext, documentPath, documentText);
+            });
     }
 
     AutoItPreprocessor::Compiler::CompilerOptions BuildCompilerOptions(const EditorState& state, const DocumentState& document)
@@ -592,7 +683,7 @@ namespace AutoItPlus::Editor
         try
         {
             const auto compilation = RunCompilation(state, document);
-            document.previewText = TrimEmptyBoundaryLines(compilation.generatedCode);
+            document.previewText = SanitizeUtf8Lossy(compilation.generatedCode);
             document.previewLineMappings = BuildPreviewLineMappings(compilation, document.path);
             if (document.previewEditor != nullptr)
             {
@@ -632,6 +723,8 @@ namespace AutoItPlus::Editor
         }
         document.previewDirty = false;
         document.outlineDirty = true;
+        document.outlinePending = false;
+        ++document.outlineRevision;
         document.status = "Loaded " + document.path.string();
         document.outputKind = OutputKind::None;
         document.dirty = false;
@@ -684,9 +777,12 @@ namespace AutoItPlus::Editor
 
         const int previewStartLine = static_cast<int>(generatedLineStart - 1U);
         const int previewEndLine = static_cast<int>(generatedLineEnd - 1U);
-        document.previewEditor->AddLineHighlight(previewStartLine, previewEndLine, ImGui::ColorConvertFloat4ToU32(preferences.previewMappingHighlight));
+        const int maxPreviewLine = std::max(0, document.previewEditor->GetTotalLines() - 1);
+        const int clampedPreviewStartLine = std::clamp(previewStartLine, 0, maxPreviewLine);
+        const int clampedPreviewEndLine = std::clamp(previewEndLine, clampedPreviewStartLine, maxPreviewLine);
+        document.previewEditor->AddLineHighlight(clampedPreviewStartLine, clampedPreviewEndLine, ImGui::ColorConvertFloat4ToU32(preferences.previewMappingHighlight));
         if (!document.previewEditor->IsFocused())
-            document.previewEditor->SetCursorPosition(TextEditor::Coordinates(previewStartLine, 0));
+            document.previewEditor->SetCursorPosition(TextEditor::Coordinates(clampedPreviewStartLine, 0));
     }
 
     void SaveDocument(DocumentState& document)
@@ -819,6 +915,9 @@ namespace AutoItPlus::Editor
         state.documents.clear();
         state.currentDocumentIndex = 0;
         state.selectedProjectPath = GetProjectCodeDirectory(project);
+        state.projectTree.clear();
+        state.projectTreeRoot.clear();
+        state.projectTreeLoading = false;
         LoadProjectWorkspace(state);
     }
 
@@ -1048,14 +1147,15 @@ namespace AutoItPlus::Editor
         const auto options = BuildCompilerOptions(state, HasOpenDocument(state) ? CurrentDocument(state) : fallbackDocument);
         const auto compilation = compiler.Compile(state.project->mainFilePath, options);
         const auto& outputPath = GetProjectBuildOutputPath(*state.project, state.buildConfiguration);
-        WriteTextFile(outputPath, compilation.generatedCode);
+        const auto generatedCode = SanitizeUtf8Lossy(compilation.generatedCode);
+        WriteTextFile(outputPath, generatedCode);
 
         if (HasOpenDocument(state))
         {
             auto& document = CurrentDocument(state);
-            document.outputText = compilation.generatedCode;
+            document.outputText = generatedCode;
             document.outputKind = OutputKind::Compiled;
-            document.previewText = TrimEmptyBoundaryLines(compilation.generatedCode);
+            document.previewText = generatedCode;
             document.previewLineMappings = BuildPreviewLineMappings(compilation, document.path);
             if (document.previewEditor != nullptr)
                 document.previewEditor->SetText(document.previewText);
@@ -1075,10 +1175,10 @@ namespace AutoItPlus::Editor
 
         auto& document = CurrentDocument(state);
         const auto compilation = RunCompilation(state, document);
-        document.outputText = compilation.generatedCode;
+        document.outputText = SanitizeUtf8Lossy(compilation.generatedCode);
         document.outputKind = OutputKind::Compiled;
         document.tokenView.clear();
-        document.previewText = TrimEmptyBoundaryLines(compilation.generatedCode);
+        document.previewText = document.outputText;
         document.previewLineMappings = BuildPreviewLineMappings(compilation, document.path);
         if (document.previewEditor != nullptr)
             document.previewEditor->SetText(document.previewText);
