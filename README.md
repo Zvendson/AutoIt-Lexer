@@ -1,9 +1,34 @@
-# Torii
+# Torii Labs
+
+Torii Labs is the desktop editor for Torii projects and the AutoIt+ toolchain.
+It is a native Windows application built for editing source files, previewing generated AutoIt output, managing project structure, and building and running `.torii` projects from one workspace.
+
+It currently focuses on:
+
+- source editing for AutoIt and AutoIt+
+- generated preview with source-to-preview mapping
+- project tree management and build target selection
+- themed editor UI and configurable shortcuts
+- integrated output and run consoles
+
+![Torii Labs workspace overview](.github/images/torii-labs-overview.gif)
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Screenshots](#screenshots)
+- [How To Build](#how-to-build)
+- [Running Torii Labs](#running-torii-labs)
+- [CLI Usage](#cli-usage)
+- [Default Editor Shortcuts](#default-editor-shortcuts)
+- [Custom Tokens](#custom-tokens)
+
+## Overview
 
 Torii is an AutoIt+ workspace built around two parts:
 
-- `Torii`: the language toolchain for tokenizing, expanding includes, and compiling AutoIt+ into plain AutoIt.
-- `Torii Labs`: the desktop editor for working with `.torii` projects, browsing source trees, building targets, previewing generated output, and running builds from one UI.
+- `Torii`: the language toolchain for tokenizing, expanding includes, and compiling AutoIt+ into plain AutoIt
+- `Torii Labs`: the desktop editor for working with `.torii` projects, browsing source trees, building targets, previewing generated output, and running builds from one UI
 
 The repository is split into a root editor app and language-specific toolchains:
 
@@ -13,26 +38,18 @@ The repository is split into a root editor app and language-specific toolchains:
 - `toolchains/AutoIt+.Compiler`: include resolver, custom token rewriter, and emitter
 - `toolchains/AutoIt+.Cli`: command-line frontend
 
-## Torii Labs
-
-Torii Labs is the main user-facing application in this repo. It is a native desktop editor built with GLFW, OpenGL, and ImGui, focused on AutoIt and AutoIt+ workflows.
-
 Key editor capabilities:
 
 - Torii project support through `.torii` files
 - syntax-highlighted source editing for AutoIt and AutoIt+
 - generated AutoIt preview with source-to-preview highlighting
 - source tree drag and drop, build target selection, and project settings
-- symbols/outlines for functions, globals, constants, and includes
+- symbols and outlines for functions, globals, constants, and includes
 - themed shell and editor palettes, including bundled presets like `Torii` and `Umi`
 - output and run consoles with ANSI color support
-- configurable shortcuts and JSON-based user/workspace settings
+- configurable shortcuts and JSON-based user and workspace settings
 
 ## Screenshots
-
-### Workspace Overview
-
-![Torii Labs workspace overview](.github/images/torii-labs-overview.gif)
 
 ### Empty Workspace
 
