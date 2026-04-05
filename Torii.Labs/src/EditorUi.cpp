@@ -2,6 +2,7 @@
 
 #include "AutoItSyntax.h"
 #include "EditorServices.h"
+#include "IconResources.h"
 #include "Version.h"
 #include "imgui_widgets/SocialLinkWidgets.h"
 
@@ -537,7 +538,7 @@ namespace
         return {};
     }
 
-    std::optional<std::string> FindEditorIconResourceName(const std::string& iconName)
+    std::optional<int> FindEditorIconResourceId(const std::string& iconName)
     {
         static const std::unordered_map<std::string, std::string> kIconAliases = {
             {"build", "gear-fill"},
@@ -564,15 +565,8 @@ namespace
             {"wand", "magic"}
         };
 
-        const auto tryResource = [](const std::string& candidateName) -> std::optional<std::string> {
-            std::string resourceName = candidateName + ".png";
-            std::transform(resourceName.begin(), resourceName.end(), resourceName.begin(), [](unsigned char character) {
-                return static_cast<char>(std::toupper(character));
-            });
-            HRSRC resource = FindResourceA(GetModuleHandleW(nullptr), resourceName.c_str(), RT_RCDATA);
-            if (resource != nullptr)
-                return resourceName;
-            return std::nullopt;
+        const auto tryResource = [](const std::string& candidateName) -> std::optional<int> {
+            return FindEmbeddedIconResourceId(candidateName);
         };
 
         if (const auto direct = tryResource(iconName); direct.has_value())
@@ -711,10 +705,10 @@ namespace
     }
 
 #if defined(_WIN32)
-    std::vector<unsigned char> LoadResourceBytes(const std::string& resourceName)
+    std::vector<unsigned char> LoadResourceBytes(int resourceId)
     {
         HMODULE module = GetModuleHandleW(nullptr);
-        HRSRC resource = FindResourceA(module, resourceName.c_str(), RT_RCDATA);
+        HRSRC resource = FindResourceW(module, MAKEINTRESOURCEW(resourceId), L"PNG");
         if (resource == nullptr)
             return {};
 
@@ -853,12 +847,12 @@ namespace
 
     const IconTexture* GetIconTexture(const std::string& iconName, int pixelSize, const ImVec4& color)
     {
-        const auto iconResourceName = FindEditorIconResourceName(iconName);
-        const auto iconPath = iconResourceName.has_value() ? std::filesystem::path() : FindEditorIconPath(iconName);
-        if (!iconResourceName.has_value() && iconPath.empty())
+        const auto iconResourceId = FindEditorIconResourceId(iconName);
+        const auto iconPath = iconResourceId.has_value() ? std::filesystem::path() : FindEditorIconPath(iconName);
+        if (!iconResourceId.has_value() && iconPath.empty())
             return nullptr;
 
-        const bool isSvg = !iconResourceName.has_value() && iconPath.extension() == ".svg";
+        const bool isSvg = !iconResourceId.has_value() && iconPath.extension() == ".svg";
         const auto cacheKey = isSvg
             ? iconName + "#" + std::to_string(pixelSize) + "#" + ToSvgColor(color)
             : iconName + "#png#" + ToSvgColor(color);
@@ -869,9 +863,9 @@ namespace
         {
 #if defined(_WIN32)
             IconTexture texture;
-            if (iconResourceName.has_value())
+            if (iconResourceId.has_value())
             {
-                const auto bytes = LoadResourceBytes(*iconResourceName);
+                const auto bytes = LoadResourceBytes(*iconResourceId);
                 texture = LoadPngTextureFromMemory(bytes.data(), bytes.size(), color);
             }
             else
