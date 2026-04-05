@@ -882,7 +882,15 @@ namespace
         }
     }
 
-    bool DrawToolbarButton(const char* id, const char* iconName, const char* label, bool enabled = true, ImVec4 iconColor = ImVec4(0.87f, 0.90f, 0.96f, 1.0f))
+    bool DrawToolbarButton(
+        const char* id,
+        const char* iconName,
+        const char* label,
+        bool enabled = true,
+        ImVec4 iconColor = ImVec4(0.87f, 0.90f, 0.96f, 1.0f),
+        const ImVec4* buttonColor = nullptr,
+        const ImVec4* buttonHoveredColor = nullptr,
+        const ImVec4* buttonActiveColor = nullptr)
     {
         const ImVec2 textSize = ImGui::CalcTextSize(label);
         const bool iconOnly = label[0] == '\0';
@@ -894,6 +902,15 @@ namespace
 
         if (!enabled)
             ImGui::BeginDisabled();
+
+        bool pushedButtonColors = false;
+        if (buttonColor != nullptr && buttonHoveredColor != nullptr && buttonActiveColor != nullptr)
+        {
+            ImGui::PushStyleColor(ImGuiCol_Button, *buttonColor);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, *buttonHoveredColor);
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, *buttonActiveColor);
+            pushedButtonColors = true;
+        }
 
         const bool pressed = ImGui::Button(buttonId.c_str(), buttonSize);
         const ImVec2 rectMin = ImGui::GetItemRectMin();
@@ -926,6 +943,8 @@ namespace
             drawList->AddText(ImVec2(textX, textY), textColor, label);
         }
 
+        if (pushedButtonColors)
+            ImGui::PopStyleColor(3);
         if (!enabled)
             ImGui::EndDisabled();
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) && label[0] != '\0')
@@ -1230,6 +1249,7 @@ namespace
             if (ImGui::BeginTabItem("Editor"))
             {
                 const ThemePreset themeOptions[] = {
+                    ThemePreset::Torii,
                     ThemePreset::Midnight,
                     ThemePreset::Forest,
                     ThemePreset::Daylight
@@ -1249,7 +1269,6 @@ namespace
                     ? ThemePresetLabel(ThemePreset::Custom)
                     : ThemePresetLabel(themeOptions[selectedThemeIndex]);
                 if (ImGui::BeginCombo("Theme", selectedThemeLabel))
-                    ThemePreset::Torii,
                 {
                     for (int index = 0; index < static_cast<int>(std::size(themeOptions)); ++index)
                     {
@@ -2478,7 +2497,18 @@ namespace
                 }
                 ImGui::PopStyleVar();
                 ImGui::SameLine();
-                if (DrawToolbarButton("Run", "run-all", "", true, icons.iconSuccess))
+                const ImVec4 runButton = ImVec4(
+                    std::clamp(icons.iconSuccess.x * 0.62f, 0.0f, 1.0f),
+                    std::clamp(icons.iconSuccess.y * 0.62f, 0.0f, 1.0f),
+                    std::clamp(icons.iconSuccess.z * 0.62f, 0.0f, 1.0f),
+                    1.0f);
+                const ImVec4 runButtonHovered = ImVec4(
+                    std::clamp(icons.iconSuccess.x * 0.78f, 0.0f, 1.0f),
+                    std::clamp(icons.iconSuccess.y * 0.78f, 0.0f, 1.0f),
+                    std::clamp(icons.iconSuccess.z * 0.78f, 0.0f, 1.0f),
+                    1.0f);
+                const ImVec4 runButtonActive = icons.iconSuccess;
+                if (DrawToolbarButton("Run", "run-all", "Run", true, ImVec4(0.98f, 0.96f, 0.95f, 1.0f), &runButton, &runButtonHovered, &runButtonActive))
                     ExecuteUiAction(state, [&]() { RunBuiltProject(state); });
                 if (ImGui::IsItemHovered())
                     ImGui::SetTooltip("Run");
@@ -2609,6 +2639,7 @@ namespace
         state.previewWidth = std::max(minPreviewWidth, totalWidth - editorWidth - (state.showOutline ? state.outlineWidth + splitterWidth * 2.0f : splitterWidth));
         ImGui::SameLine();
 
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, state.preferences.autoItPlus.background);
         ImGui::BeginChild("PreviewPane", ImVec2(0.0f, 0.0f), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
         bool previewHovered = false;
         {
@@ -2632,6 +2663,7 @@ namespace
                 ImGui::PopFont();
         }
         ImGui::EndChild();
+        ImGui::PopStyleColor();
 
         if (previewHovered && ImGui::GetIO().KeyCtrl && ImGui::GetIO().MouseWheel != 0.0f)
         {

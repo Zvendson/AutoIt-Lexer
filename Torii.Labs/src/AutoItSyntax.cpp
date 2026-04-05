@@ -250,8 +250,9 @@ namespace
         auto palette = MakePaletteFromSettings(preferences.autoIt);
         const bool lightTheme = Luminance(preferences.uiTheme.panelColor) > 0.6f;
         const ImVec4 defaultText = lightTheme ? ImVec4(0.12f, 0.16f, 0.20f, 1.0f) : ImVec4(0.88f, 0.92f, 0.97f, 1.0f);
-        const ImVec4 background = preferences.uiTheme.panelColor;
-        const ImVec4 currentLine = lightTheme ? AdjustColor(background, -0.06f) : AdjustColor(background, 0.05f);
+        // Keep logger/output editors visually aligned with the main code editor surface.
+        const ImVec4 background = preferences.autoItPlus.background;
+        const ImVec4 currentLine = lightTheme ? AdjustColor(background, -0.06f) : AdjustColor(background, 0.04f);
         palette[static_cast<std::size_t>(TextEditor::PaletteIndex::Default)] = ToColor(defaultText);
         palette[static_cast<std::size_t>(TextEditor::PaletteIndex::Identifier)] = ToColor(defaultText);
         palette[static_cast<std::size_t>(TextEditor::PaletteIndex::KnownIdentifier)] = ToColor(preferences.autoIt.preprocessor);
