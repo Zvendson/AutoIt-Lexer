@@ -2399,7 +2399,7 @@ namespace
         if (!HasOpenDocument(state))
         {
             ImGui::PushStyleColor(ImGuiCol_ChildBg, theme.uiTheme.panelColor);
-            ImGui::BeginChild("OutlinePanel", size, true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+            ImGui::BeginChild("OutlinePanel", size, true);
             {
                 ScopedFont outlineFont(ChooseMonoFont(1.0f));
                 DrawSectionHeader("symbol-misc", "Symbols", nullptr, icons.iconNeutral);
@@ -2415,7 +2415,7 @@ namespace
             RefreshOutline(state, document);
 
         ImGui::PushStyleColor(ImGuiCol_ChildBg, theme.uiTheme.panelColor);
-        ImGui::BeginChild("OutlinePanel", size, true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+        ImGui::BeginChild("OutlinePanel", size, true);
         {
             ScopedFont outlineFont(ChooseMonoFont(1.0f));
             const auto outlineSubtitle = document.path.filename().string();
@@ -2757,7 +2757,7 @@ namespace
         ImGui::SameLine();
 
         ImGui::PushStyleColor(ImGuiCol_ChildBg, state.preferences.autoItPlus.background);
-        ImGui::BeginChild("PreviewPane", ImVec2(0.0f, 0.0f), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+        ImGui::BeginChild("PreviewPane", ImVec2(0.0f, 0.0f), true);
         bool previewHovered = false;
         {
             ScopedFont previewPaneFont(ChooseMonoFont(1.0f));
