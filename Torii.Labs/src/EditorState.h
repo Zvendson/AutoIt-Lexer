@@ -27,6 +27,7 @@ namespace AutoItPlus::Editor
     enum class ThemePreset
     {
         Custom,
+        Torii,
         Midnight,
         Forest,
         Daylight
@@ -112,7 +113,7 @@ namespace AutoItPlus::Editor
         bool showWhitespace = false;
         bool showLineNumbers = true;
         bool showPreferences = false;
-        ThemePreset themePreset = ThemePreset::Midnight;
+        ThemePreset themePreset = ThemePreset::Torii;
     };
 
     enum class OutputKind

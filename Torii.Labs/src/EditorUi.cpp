@@ -66,6 +66,7 @@ namespace
         switch (preset)
         {
             case ThemePreset::Custom: return "Custom";
+            case ThemePreset::Torii: return "Torii";
             case ThemePreset::Midnight: return "Midnight";
             case ThemePreset::Forest: return "Forest";
             case ThemePreset::Daylight: return "Daylight";
@@ -78,6 +79,69 @@ namespace
     {
         switch (preset)
         {
+            case ThemePreset::Torii:
+                return ThemeDefinition{
+                    .label = "Torii",
+                    .autoIt = {
+                        ImVec4(0.88f, 0.62f, 0.42f, 1.0f),
+                        ImVec4(0.90f, 0.89f, 0.91f, 1.0f),
+                        ImVec4(0.86f, 0.70f, 0.72f, 1.0f),
+                        ImVec4(0.83f, 0.55f, 0.65f, 1.0f),
+                        ImVec4(0.58f, 0.55f, 0.59f, 1.0f),
+                        ImVec4(0.95f, 0.66f, 0.49f, 1.0f),
+                        ImVec4(0.79f, 0.62f, 0.84f, 1.0f),
+                        ImVec4(0.73f, 0.74f, 0.78f, 1.0f),
+                        ImVec4(0.11f, 0.11f, 0.13f, 1.0f),
+                        ImVec4(0.24f, 0.19f, 0.21f, 0.60f),
+                        ImVec4(0.49f, 0.48f, 0.54f, 1.0f),
+                        ImVec4(0.66f, 0.44f, 0.51f, 0.36f),
+                        ImVec4(0.80f, 0.58f, 0.68f, 0.72f)
+                    },
+                    .autoItPlus = {
+                        ImVec4(0.90f, 0.64f, 0.44f, 1.0f),
+                        ImVec4(0.91f, 0.90f, 0.92f, 1.0f),
+                        ImVec4(0.88f, 0.73f, 0.75f, 1.0f),
+                        ImVec4(0.85f, 0.58f, 0.68f, 1.0f),
+                        ImVec4(0.60f, 0.57f, 0.61f, 1.0f),
+                        ImVec4(0.97f, 0.68f, 0.51f, 1.0f),
+                        ImVec4(0.81f, 0.64f, 0.86f, 1.0f),
+                        ImVec4(0.75f, 0.76f, 0.80f, 1.0f),
+                        ImVec4(0.11f, 0.11f, 0.13f, 1.0f),
+                        ImVec4(0.24f, 0.19f, 0.21f, 0.60f),
+                        ImVec4(0.49f, 0.48f, 0.54f, 1.0f),
+                        ImVec4(0.66f, 0.44f, 0.51f, 0.36f),
+                        ImVec4(0.80f, 0.58f, 0.68f, 0.72f)
+                    },
+                    .previewMappingHighlight = ImVec4(0.80f, 0.52f, 0.60f, 0.20f),
+                    .uiTheme = {
+                        .accentColor = ImVec4(0.84f, 0.40f, 0.34f, 1.0f),
+                        .accentSoftColor = ImVec4(0.32f, 0.20f, 0.24f, 1.0f),
+                        .panelColor = ImVec4(0.22f, 0.16f, 0.18f, 1.0f),
+                        .panelAltColor = ImVec4(0.26f, 0.19f, 0.21f, 1.0f),
+                        .windowBg = ImVec4(0.16f, 0.12f, 0.14f, 1.0f),
+                        .menuBarBg = ImVec4(0.20f, 0.14f, 0.16f, 1.0f),
+                        .borderColor = ImVec4(0.40f, 0.30f, 0.33f, 1.0f),
+                        .headerHovered = ImVec4(0.43f, 0.28f, 0.32f, 1.0f),
+                        .buttonHovered = ImVec4(0.50f, 0.33f, 0.38f, 1.0f),
+                        .buttonActive = ImVec4(0.58f, 0.38f, 0.42f, 1.0f),
+                        .frameBg = ImVec4(0.27f, 0.19f, 0.21f, 1.0f),
+                        .frameBgHovered = ImVec4(0.34f, 0.24f, 0.27f, 1.0f),
+                        .tabColor = ImVec4(0.24f, 0.17f, 0.19f, 1.0f),
+                        .tabHovered = ImVec4(0.37f, 0.26f, 0.29f, 1.0f),
+                        .titleBg = ImVec4(0.22f, 0.16f, 0.18f, 1.0f),
+                        .titleBgActive = ImVec4(0.30f, 0.21f, 0.24f, 1.0f),
+                        .separatorColor = ImVec4(0.39f, 0.29f, 0.32f, 1.0f),
+                        .resizeGrip = ImVec4(0.72f, 0.48f, 0.55f, 0.46f),
+                        .sliderGrabActive = ImVec4(0.86f, 0.54f, 0.47f, 1.0f),
+                        .textColor = ImVec4(0.92f, 0.88f, 0.89f, 1.0f),
+                        .textDisabledColor = ImVec4(0.64f, 0.56f, 0.58f, 1.0f),
+                        .popupBg = ImVec4(0.24f, 0.17f, 0.19f, 1.0f),
+                        .iconPrimary = ImVec4(0.73f, 0.34f, 0.29f, 1.0f),
+                        .iconSecondary = ImVec4(0.80f, 0.55f, 0.38f, 1.0f),
+                        .iconNeutral = ImVec4(0.64f, 0.54f, 0.57f, 1.0f),
+                        .iconSuccess = ImVec4(0.84f, 0.41f, 0.34f, 1.0f)
+                    }
+                };
             case ThemePreset::Forest:
                 return ThemeDefinition{
                     .label = "Forest",
@@ -226,7 +290,7 @@ namespace
                 };
         }
 
-        return MakeThemeDefinition(ThemePreset::Midnight);
+        return MakeThemeDefinition(ThemePreset::Torii);
     }
 
     void ApplyThemePreset(EditorPreferences& preferences, ThemePreset preset)
@@ -242,7 +306,7 @@ namespace
     const ThemeDefinition& ActiveTheme(const EditorPreferences& preferences)
     {
         static ThemeDefinition theme;
-        theme = MakeThemeDefinition(preferences.themePreset == ThemePreset::Custom ? ThemePreset::Midnight : preferences.themePreset);
+        theme = MakeThemeDefinition(preferences.themePreset == ThemePreset::Custom ? ThemePreset::Torii : preferences.themePreset);
         if (preferences.themePreset == ThemePreset::Custom)
         {
             theme.autoIt = preferences.autoIt;
@@ -1185,6 +1249,7 @@ namespace
                     ? ThemePresetLabel(ThemePreset::Custom)
                     : ThemePresetLabel(themeOptions[selectedThemeIndex]);
                 if (ImGui::BeginCombo("Theme", selectedThemeLabel))
+                    ThemePreset::Torii,
                 {
                     for (int index = 0; index < static_cast<int>(std::size(themeOptions)); ++index)
                     {
