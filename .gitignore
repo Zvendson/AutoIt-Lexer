@@ -13,3 +13,4 @@ bin-int/
 *_stripped.au3
 /.idea
 /build-test
+/unused-icons/
