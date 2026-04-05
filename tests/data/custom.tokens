@@ -1,0 +1,5 @@
+token AppMessage
+match=__APP_MESSAGE__
+emit=$LOCAL_VALUE & " / " & $SHARED_VALUE
+kinds=Word
+end
