@@ -1,0 +1,4 @@
+*.h linguist-language=C++
+
+Torii.Labs/third_party/* linguist-vendored=true
+Torii.Labs/src/fonts/*.h linguist-generated=true
