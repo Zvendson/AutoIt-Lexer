@@ -20,11 +20,11 @@ function(autoit_apply_warnings target_name)
     endif()
 endfunction()
 
-add_subdirectory(code/AutoItPreprocessor.Common)
-add_subdirectory(code/AutoItPreprocessor.Tokenizer)
-add_subdirectory(code/AutoItPreprocessor.Compiler)
-add_subdirectory(code/AutoItPreprocessor.Cli)
-add_subdirectory(code/AutoItPreprocessor.Editor)
+add_subdirectory(toolchains/AutoIt+.Common)
+add_subdirectory(toolchains/AutoIt+.Lexer)
+add_subdirectory(toolchains/AutoIt+.Compiler)
+add_subdirectory(toolchains/AutoIt+.Cli)
+add_subdirectory(Torii.Labs)
 
 if(BUILD_TESTING)
     add_test(
