@@ -3039,8 +3039,8 @@ namespace
                     ImGui::TextDisabled("Create or open a project to begin.");
                     ImGui::Spacing();
                     const Widgets::SocialLinkButton aboutLinks[] = {
-                        {"ProjectRepo", "github", "Open AutoIt-Lexer on GitHub", "https://github.com/Zvendson/AutoIt-Lexer", icons.iconNeutral},
-                        {"ProjectIssues", "globe", "Open the project page", "https://github.com/Zvendson/AutoIt-Lexer", icons.iconPrimary}
+                        {"ProjectRepo", "github", "Open Torii Labs on GitHub", "https://github.com/Zvendson/ToriiLabs", icons.iconNeutral},
+                        {"ProjectIssues", "globe", "Open the project page", "https://github.com/Zvendson/ToriiLabs", icons.iconPrimary}
                     };
                     Widgets::DrawSocialIconRow(
                         aboutLinks,
