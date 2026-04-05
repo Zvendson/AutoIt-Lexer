@@ -1,0 +1,9 @@
+#pragma once
+
+namespace AutoItPlus::Editor
+{
+    inline constexpr const char* kEditorDisplayName = "Torii Labs";
+    inline constexpr const char* kEditorVersion = "@TORII_LABS_VERSION@";
+    inline constexpr const char* kEditorVersionLabel = "@TORII_LABS_VERSION_LABEL@";
+    inline constexpr const char* kEditorWindowTitle = "Torii Labs @TORII_LABS_VERSION_LABEL@";
+}

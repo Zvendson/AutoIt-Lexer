@@ -2,6 +2,7 @@
 
 #include "AutoItSyntax.h"
 #include "EditorServices.h"
+#include "Version.h"
 #include "imgui_widgets/SocialLinkWidgets.h"
 
 #if defined(_WIN32)
@@ -3245,10 +3246,12 @@ namespace
                     ImGui::Text("%s", state.project->name.c_str());
                     DrawInlineDivider();
                     ImGui::Text("%s", BuildConfigurationLabel(state.buildConfiguration));
+                    DrawInlineDivider();
+                    ImGui::TextUnformatted(kEditorVersionLabel);
                 }
                 else
                 {
-                    ImGui::TextUnformatted("No project loaded");
+                    ImGui::Text("No project loaded | %s", kEditorVersionLabel);
                 }
             }
             ImGui::EndChild();
@@ -3279,6 +3282,8 @@ namespace
             }
             DrawInlineDivider();
             ImGui::Text("%s", document.path.extension().string().c_str());
+            DrawInlineDivider();
+            ImGui::TextUnformatted(kEditorVersionLabel);
         }
         ImGui::EndChild();
         ImGui::PopStyleVar(2);
@@ -3340,7 +3345,7 @@ namespace AutoItPlus::Editor
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-        GLFWwindow* window = glfwCreateWindow(1600, 900, "Torii Labs", nullptr, nullptr);
+        GLFWwindow* window = glfwCreateWindow(1600, 900, kEditorWindowTitle, nullptr, nullptr);
         if (window == nullptr)
         {
             glfwTerminate();

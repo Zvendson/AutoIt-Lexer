@@ -1,0 +1,56 @@
+name: Release Torii Labs
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure CMake
+        run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+
+      - name: Build Torii Labs in Release mode
+        run: cmake --build build --config Release --target ToriiLabs
+
+      - name: Resolve release asset path
+        shell: pwsh
+        run: |
+          $assetPath = Join-Path $env:GITHUB_WORKSPACE 'bin\Release\ToriiLabs\Torii Labs.exe'
+          if (-not (Test-Path $assetPath)) {
+              throw "Expected release asset was not found: $assetPath"
+          }
+
+          "TORII_RELEASE_ASSET=$assetPath" >> $env:GITHUB_ENV
+
+      - name: Create GitHub release and upload editor binary
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $title = "Torii Labs 0.0.1 Alpha"
+          $notesFile = Join-Path $env:GITHUB_WORKSPACE 'Changelog.md'
+
+          if (gh release view $tag --repo $env:GITHUB_REPOSITORY *> $null) {
+              gh release edit $tag --repo $env:GITHUB_REPOSITORY --title $title --notes-file $notesFile
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          } else {
+              gh release create $tag $env:TORII_RELEASE_ASSET --repo $env:GITHUB_REPOSITORY --title $title --notes-file $notesFile --prerelease
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              exit 0
+          }
+
+          gh release upload $tag $env:TORII_RELEASE_ASSET --repo $env:GITHUB_REPOSITORY --clobber
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

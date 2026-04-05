@@ -2,6 +2,22 @@ set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
+set(TORII_LABS_VERSION "${PROJECT_VERSION}")
+set(TORII_LABS_VERSION_LABEL "${PROJECT_VERSION} Alpha")
+string(REPLACE "." "," TORII_LABS_VERSION_COMMA "${TORII_LABS_VERSION}")
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Version.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/Version.h"
+    @ONLY
+)
+if(WIN32)
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/Version.rc.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/generated/Version.rc"
+        @ONLY
+    )
+endif()
+
 set(AUTOIT_DEPS_DIR "${CMAKE_SOURCE_DIR}/deps")
 set(glfw_SOURCE_DIR "${AUTOIT_DEPS_DIR}/glfw")
 set(imgui_SOURCE_DIR "${AUTOIT_DEPS_DIR}/imgui")
@@ -107,6 +123,10 @@ add_executable(ToriiLabs
     src/main.cpp
 )
 
+if(WIN32)
+    target_sources(ToriiLabs PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated/Version.rc")
+endif()
+
 target_link_libraries(ToriiLabs
     PRIVATE
         AutoItPreprocessor.Compiler
@@ -123,6 +143,7 @@ target_include_directories(ToriiLabs
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${CMAKE_CURRENT_SOURCE_DIR}/src/imgui_widgets
         ${CMAKE_CURRENT_SOURCE_DIR}/third_party
+        ${CMAKE_CURRENT_BINARY_DIR}/generated
 )
 
 foreach(config Debug Release RelWithDebInfo MinSizeRel)
