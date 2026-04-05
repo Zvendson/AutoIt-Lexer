@@ -5,6 +5,13 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(TORII_LABS_VERSION "${PROJECT_VERSION}")
 set(TORII_LABS_VERSION_LABEL "${PROJECT_VERSION} Alpha")
 string(REPLACE "." "," TORII_LABS_VERSION_COMMA "${TORII_LABS_VERSION}")
+file(GLOB TORII_LABS_ICON_FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/icons/*.png")
+set(TORII_LABS_ICON_RESOURCE_LINES "")
+foreach(icon_file IN LISTS TORII_LABS_ICON_FILES)
+    file(TO_CMAKE_PATH "${icon_file}" icon_file_cmake)
+    get_filename_component(icon_filename "${icon_file}" NAME)
+    string(APPEND TORII_LABS_ICON_RESOURCE_LINES "\"${icon_filename}\" RCDATA \"${icon_file_cmake}\"\n")
+endforeach()
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/Version.h.in"
     "${CMAKE_CURRENT_BINARY_DIR}/generated/Version.h"
@@ -14,6 +21,11 @@ if(WIN32)
     configure_file(
         "${CMAKE_CURRENT_SOURCE_DIR}/Version.rc.in"
         "${CMAKE_CURRENT_BINARY_DIR}/generated/Version.rc"
+        @ONLY
+    )
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/Assets.rc.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/generated/Assets.rc"
         @ONLY
     )
 endif()
@@ -124,7 +136,10 @@ add_executable(ToriiLabs
 )
 
 if(WIN32)
-    target_sources(ToriiLabs PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated/Version.rc")
+    target_sources(ToriiLabs PRIVATE
+        "${CMAKE_CURRENT_BINARY_DIR}/generated/Version.rc"
+        "${CMAKE_CURRENT_BINARY_DIR}/generated/Assets.rc"
+    )
 endif()
 
 target_link_libraries(ToriiLabs

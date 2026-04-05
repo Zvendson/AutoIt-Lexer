@@ -9,6 +9,7 @@
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
+#include <windows.h>
 #include <objbase.h>
 #include <wincodec.h>
 #endif
@@ -38,10 +39,13 @@
 #include <cctype>
 #include <chrono>
 #include <cmath>
+#include <cstring>
 #include <cstdio>
 #include <cstdint>
 #include <filesystem>
+#include <fstream>
 #include <functional>
+#include <iterator>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -522,6 +526,50 @@ namespace
         return {};
     }
 
+    std::optional<std::string> FindEditorIconResourceName(const std::string& iconName)
+    {
+        static const std::unordered_map<std::string, std::string> kIconAliases = {
+            {"build", "gear-fill"},
+            {"file-symlink-file", "file-earmark-fill"},
+            {"folder-opened", "folder2-open"},
+            {"group-by-ref-type", "list-nested"},
+            {"hashtag", "hash"},
+            {"list-tree", "list-nested"},
+            {"new-file", "file-earmark-plus-fill"},
+            {"new-folder", "folder-plus"},
+            {"output", "terminal-fill"},
+            {"preview", "eye-fill"},
+            {"project", "files"},
+            {"root-folder-opened", "folder-fill"},
+            {"run-all", "play-fill"},
+            {"symbol-constant", "123"},
+            {"symbol-keyword", "code-square"},
+            {"symbol-method-arrow", "braces"},
+            {"symbol-misc", "list"},
+            {"symbol-namespace", "type"},
+            {"symbol-parameter", "key-fill"},
+            {"symbol-ruler", "rulers"},
+            {"symbol-variable", "type"},
+            {"wand", "magic"}
+        };
+
+        const auto tryResource = [](const std::string& candidateName) -> std::optional<std::string> {
+            const std::string resourceName = candidateName + ".png";
+            HRSRC resource = FindResourceA(GetModuleHandleW(nullptr), resourceName.c_str(), RT_RCDATA);
+            if (resource != nullptr)
+                return resourceName;
+            return std::nullopt;
+        };
+
+        if (const auto direct = tryResource(iconName); direct.has_value())
+            return direct;
+
+        if (const auto alias = kIconAliases.find(iconName); alias != kIconAliases.end())
+            return tryResource(alias->second);
+
+        return std::nullopt;
+    }
+
     std::string ToLower(std::string value)
     {
         std::transform(value.begin(), value.end(), value.begin(), [](unsigned char character) {
@@ -649,7 +697,27 @@ namespace
     }
 
 #if defined(_WIN32)
-    IconTexture LoadPngTexture(const std::filesystem::path& iconPath, const ImVec4& color)
+    std::vector<unsigned char> LoadResourceBytes(const std::string& resourceName)
+    {
+        HMODULE module = GetModuleHandleW(nullptr);
+        HRSRC resource = FindResourceA(module, resourceName.c_str(), RT_RCDATA);
+        if (resource == nullptr)
+            return {};
+
+        HGLOBAL loaded = LoadResource(module, resource);
+        if (loaded == nullptr)
+            return {};
+
+        const DWORD resourceSize = SizeofResource(module, resource);
+        const void* resourceData = LockResource(loaded);
+        if (resourceData == nullptr || resourceSize == 0)
+            return {};
+
+        const auto* begin = static_cast<const unsigned char*>(resourceData);
+        return std::vector<unsigned char>(begin, begin + resourceSize);
+    }
+
+    IconTexture LoadPngTextureFromMemory(const unsigned char* bytes, std::size_t byteCount, const ImVec4& color)
     {
         HRESULT initResult = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
         const bool didInitializeCom = SUCCEEDED(initResult);
@@ -661,6 +729,7 @@ namespace
         IWICBitmapDecoder* decoder = nullptr;
         IWICBitmapFrameDecode* frame = nullptr;
         IWICFormatConverter* converter = nullptr;
+        IStream* stream = nullptr;
         IconTexture iconTexture;
         UINT width = 0;
         UINT height = 0;
@@ -669,6 +738,11 @@ namespace
         const unsigned char tintG = static_cast<unsigned char>(std::clamp(std::lround(color.y * 255.0f), 0L, 255L));
         const unsigned char tintB = static_cast<unsigned char>(std::clamp(std::lround(color.z * 255.0f), 0L, 255L));
         const unsigned char tintA = static_cast<unsigned char>(std::clamp(std::lround(color.w * 255.0f), 0L, 255L));
+        HGLOBAL memory = nullptr;
+        void* memoryData = nullptr;
+
+        if (bytes == nullptr || byteCount == 0)
+            goto cleanup;
 
         if (FAILED(CoCreateInstance(
                 CLSID_WICImagingFactory,
@@ -677,10 +751,23 @@ namespace
                 IID_PPV_ARGS(&factory))))
             goto cleanup;
 
-        if (FAILED(factory->CreateDecoderFromFilename(
-                iconPath.wstring().c_str(),
+        memory = GlobalAlloc(GMEM_MOVEABLE, byteCount);
+        if (memory == nullptr)
+            goto cleanup;
+
+        memoryData = GlobalLock(memory);
+        if (memoryData == nullptr)
+            goto cleanup;
+        std::memcpy(memoryData, bytes, byteCount);
+        GlobalUnlock(memory);
+
+        if (FAILED(CreateStreamOnHGlobal(memory, TRUE, &stream)))
+            goto cleanup;
+        memory = nullptr;
+
+        if (FAILED(factory->CreateDecoderFromStream(
+                stream,
                 nullptr,
-                GENERIC_READ,
                 WICDecodeMetadataCacheOnDemand,
                 &decoder)))
             goto cleanup;
@@ -720,6 +807,10 @@ namespace
         iconTexture = CreateTextureFromPixels(pixels.data(), static_cast<int>(width), static_cast<int>(height));
 
     cleanup:
+        if (stream != nullptr)
+            stream->Release();
+        if (memory != nullptr)
+            GlobalFree(memory);
         if (converter != nullptr)
             converter->Release();
         if (frame != nullptr)
@@ -732,15 +823,28 @@ namespace
             CoUninitialize();
         return iconTexture;
     }
+
+    IconTexture LoadPngTexture(const std::filesystem::path& iconPath, const ImVec4& color)
+    {
+        std::ifstream input(iconPath, std::ios::binary);
+        if (!input)
+            return {};
+
+        const std::vector<unsigned char> bytes{
+            std::istreambuf_iterator<char>(input),
+            std::istreambuf_iterator<char>()};
+        return LoadPngTextureFromMemory(bytes.data(), bytes.size(), color);
+    }
 #endif
 
     const IconTexture* GetIconTexture(const std::string& iconName, int pixelSize, const ImVec4& color)
     {
-        const auto iconPath = FindEditorIconPath(iconName);
-        if (iconPath.empty())
+        const auto iconResourceName = FindEditorIconResourceName(iconName);
+        const auto iconPath = iconResourceName.has_value() ? std::filesystem::path() : FindEditorIconPath(iconName);
+        if (!iconResourceName.has_value() && iconPath.empty())
             return nullptr;
 
-        const bool isSvg = iconPath.extension() == ".svg";
+        const bool isSvg = !iconResourceName.has_value() && iconPath.extension() == ".svg";
         const auto cacheKey = isSvg
             ? iconName + "#" + std::to_string(pixelSize) + "#" + ToSvgColor(color)
             : iconName + "#png#" + ToSvgColor(color);
@@ -750,7 +854,17 @@ namespace
         if (!isSvg)
         {
 #if defined(_WIN32)
-            const auto [it, inserted] = g_iconCache.emplace(cacheKey, LoadPngTexture(iconPath, color));
+            IconTexture texture;
+            if (iconResourceName.has_value())
+            {
+                const auto bytes = LoadResourceBytes(*iconResourceName);
+                texture = LoadPngTextureFromMemory(bytes.data(), bytes.size(), color);
+            }
+            else
+            {
+                texture = LoadPngTexture(iconPath, color);
+            }
+            const auto [it, inserted] = g_iconCache.emplace(cacheKey, std::move(texture));
             return inserted ? (it->second.handle != 0 ? &it->second : nullptr) : &g_iconCache.find(cacheKey)->second;
 #else
             g_iconCache.emplace(cacheKey, IconTexture{});
