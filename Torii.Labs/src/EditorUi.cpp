@@ -554,7 +554,10 @@ namespace
         };
 
         const auto tryResource = [](const std::string& candidateName) -> std::optional<std::string> {
-            const std::string resourceName = candidateName + ".png";
+            std::string resourceName = candidateName + ".png";
+            std::transform(resourceName.begin(), resourceName.end(), resourceName.begin(), [](unsigned char character) {
+                return static_cast<char>(std::toupper(character));
+            });
             HRSRC resource = FindResourceA(GetModuleHandleW(nullptr), resourceName.c_str(), RT_RCDATA);
             if (resource != nullptr)
                 return resourceName;
