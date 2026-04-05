@@ -248,6 +248,7 @@ public:
 	inline bool IsShowingLineNumbers() const { return mShowLineNumbers; }
 	void RequestScrollToBottom();
 	void RequestScrollToLine(int aLine, int aLinesAbove = 0);
+	void RequestScrollToLineCentered(int aLine);
 
 	void SetTabSize(int aValue);
 	inline int GetTabSize() const { return mTabSize; }
@@ -383,6 +384,7 @@ private:
 	bool mScrollToBottom;
 	int mScrollToLine;
 	int mScrollToLinePadding;
+	bool mScrollToLineCentered;
 	bool mScrollToTop;
 	bool mTextChanged;
 	bool mFocused;

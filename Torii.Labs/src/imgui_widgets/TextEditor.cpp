@@ -35,6 +35,7 @@ TextEditor::TextEditor()
 	, mScrollToBottom(false)
 	, mScrollToLine(-1)
 	, mScrollToLinePadding(0)
+	, mScrollToLineCentered(false)
 	, mScrollToTop(false)
 	, mTextChanged(false)
 	, mFocused(false)
@@ -1170,10 +1171,17 @@ void TextEditor::Render()
 
 	if (mScrollToLine >= 0)
 	{
-		const int targetTopLine = std::max(0, mScrollToLine - mScrollToLinePadding);
+		int targetTopLine = std::max(0, mScrollToLine - mScrollToLinePadding);
+		if (mScrollToLineCentered)
+		{
+			const float contentHeight = ImGui::GetWindowHeight() - ImGui::GetStyle().WindowPadding.y * 2.0f;
+			const int visibleLines = std::max(1, static_cast<int>(contentHeight / std::max(1.0f, mCharAdvance.y)));
+			targetTopLine = std::max(0, mScrollToLine - visibleLines / 2);
+		}
 		ImGui::SetScrollY(std::max(0.0f, targetTopLine * mCharAdvance.y));
 		mScrollToLine = -1;
 		mScrollToLinePadding = 0;
+		mScrollToLineCentered = false;
 	}
 
 	if (mScrollToCursor)
@@ -1475,8 +1483,20 @@ void TextEditor::RequestScrollToLine(int aLine, int aLinesAbove)
 {
 	mScrollToTop = false;
 	mScrollToBottom = false;
+	mScrollToCursor = false;
 	mScrollToLine = std::max(0, aLine);
 	mScrollToLinePadding = std::max(0, aLinesAbove);
+	mScrollToLineCentered = false;
+}
+
+void TextEditor::RequestScrollToLineCentered(int aLine)
+{
+	mScrollToTop = false;
+	mScrollToBottom = false;
+	mScrollToCursor = false;
+	mScrollToLine = std::max(0, aLine);
+	mScrollToLinePadding = 0;
+	mScrollToLineCentered = true;
 }
 
 void TextEditor::SetTextLines(const std::vector<std::string> & aLines)

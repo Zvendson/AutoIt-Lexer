@@ -1029,7 +1029,22 @@ namespace
     {
         const int targetLine = std::max(0, line - 1);
         document.editor->SetCursorPosition(TextEditor::Coordinates(targetLine, 0));
-        document.editor->RequestScrollToLine(targetLine, 4);
+        document.editor->RequestScrollToLineCentered(targetLine);
+
+        if (document.previewEditor == nullptr)
+            return;
+
+        const std::size_t sourceLine = static_cast<std::size_t>(targetLine + 1);
+        if (sourceLine >= document.previewLineMappings.size())
+            return;
+
+        const auto& mapping = document.previewLineMappings[sourceLine];
+        if (mapping.generatedLineStart == 0 || mapping.generatedLineEnd == 0)
+            return;
+
+        const int previewLine = std::max(0, static_cast<int>(mapping.generatedLineStart - 1U));
+        document.previewEditor->SetCursorPosition(TextEditor::Coordinates(previewLine, 0));
+        document.previewEditor->RequestScrollToLineCentered(previewLine);
     }
 
     void SetUiStatus(EditorState& state, const std::string& message);
