@@ -31,6 +31,7 @@ namespace AutoItPlus::Editor
     {
         Custom,
         Torii,
+        Umi,
         Midnight,
         Forest,
         Daylight

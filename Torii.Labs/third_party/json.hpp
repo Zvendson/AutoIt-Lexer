@@ -3548,20 +3548,20 @@ NLOHMANN_JSON_NAMESPACE_END
     template<typename RefStringType>
     class json_pointer;
 
-    /*!
-    @brief default specialization
-    @sa https://json.nlohmann.me/api/json/
-    */
-    using json = basic_json<>;
-
     /// @brief a minimal map-like container that preserves insertion order
     /// @sa https://json.nlohmann.me/api/ordered_map/
     template<class Key, class T, class IgnoredLess, class Allocator>
     struct ordered_map;
 
+    /*!
+    @brief default specialization
+    @sa https://json.nlohmann.me/api/json/
+    */
+    using json = basic_json<nlohmann::ordered_map>;
+
     /// @brief specialization that maintains the insertion order of object keys
     /// @sa https://json.nlohmann.me/api/ordered_json/
-    using ordered_json = basic_json<nlohmann::ordered_map>;
+    using ordered_json = json;
 
     NLOHMANN_JSON_NAMESPACE_END
 

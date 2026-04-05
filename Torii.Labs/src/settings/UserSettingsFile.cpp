@@ -32,6 +32,7 @@ namespace AutoItPlus::Editor::Settings
             {
                 case ThemePreset::Custom: return "Custom";
                 case ThemePreset::Torii: return "Torii";
+                case ThemePreset::Umi: return "Umi";
                 case ThemePreset::Midnight: return "Midnight";
                 case ThemePreset::Forest: return "Forest";
                 case ThemePreset::Daylight: return "Daylight";
@@ -48,6 +49,7 @@ namespace AutoItPlus::Editor::Settings
             const std::string value = json.get<std::string>();
             if (value == "Custom") return ThemePreset::Custom;
             if (value == "Torii") return ThemePreset::Torii;
+            if (value == "Umi") return ThemePreset::Umi;
             if (value == "Midnight") return ThemePreset::Midnight;
             if (value == "Forest") return ThemePreset::Forest;
             if (value == "Daylight") return ThemePreset::Daylight;
