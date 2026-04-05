@@ -1055,7 +1055,7 @@ namespace AutoItPlus::Editor
 
     std::filesystem::path GetProjectStateDirectory(const ProjectState& project)
     {
-        return project.rootDirectory / ".autoit";
+        return project.rootDirectory / ".torii";
     }
 
     void EnsureProjectStateDirectory(const ProjectState& project)

@@ -925,7 +925,9 @@ namespace
         bool open,
         const char* closedIconName,
         const char* openedIconName,
-        const ImVec4& iconColor)
+        const ImVec4& iconColor,
+        const char* badgeText = nullptr,
+        const ImVec4* badgeColor = nullptr)
     {
         constexpr float kRowHeight = 24.0f;
         constexpr float kIndentWidth = 18.0f;
@@ -975,6 +977,14 @@ namespace
         }
 
         drawList->AddText(textMin, ImGui::GetColorU32(ImGuiCol_Text), label.c_str());
+
+        if (badgeText != nullptr && badgeText[0] != '\0')
+        {
+            const ImVec2 badgeSize = ImGui::CalcTextSize(badgeText);
+            const ImVec2 badgePos(itemMax.x - badgeSize.x - 10.0f, itemMin.y + (kRowHeight - badgeSize.y) * 0.5f);
+            const ImU32 badgeTint = ImGui::GetColorU32(badgeColor != nullptr ? *badgeColor : ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+            drawList->AddText(badgePos, badgeTint, badgeText);
+        }
 
         if (isDirectory && result.clicked)
         {
@@ -1350,7 +1360,7 @@ namespace
             return false;
 
         const auto first = *relativePath.begin();
-        return first == ".git" || first == "build" || first == ".autoit";
+        return first == ".git" || first == "build" || first == ".torii" || first == ".autoit";
     }
 
     std::vector<ProjectTreeNode> BuildProjectTree(const ProjectState& project, const std::filesystem::path& path)
@@ -2475,6 +2485,8 @@ namespace
         const bool isDirectory = node.isDirectory;
         const auto& name = node.name;
         const bool isSelected = state.selectedProjectPath.has_value() && *state.selectedProjectPath == path;
+        const bool isBuildTarget = state.project.has_value()
+            && std::filesystem::absolute(state.project->mainFilePath).lexically_normal() == std::filesystem::absolute(path).lexically_normal();
 
         if (isDirectory)
         {
@@ -2559,7 +2571,9 @@ namespace
             false,
             FindKnownFileTypeIcon(path),
             FindKnownFileTypeIcon(path),
-            ActiveTheme(state.preferences).uiTheme.iconPrimary);
+            isBuildTarget ? ActiveTheme(state.preferences).uiTheme.iconSuccess : ActiveTheme(state.preferences).uiTheme.iconPrimary,
+            isBuildTarget ? "[Build]" : nullptr,
+            isBuildTarget ? &ActiveTheme(state.preferences).uiTheme.iconSuccess : nullptr);
         if (row.clicked)
             state.selectedProjectPath = path;
         if (row.doubleClicked && IsEditableProjectFile(path))
@@ -2580,6 +2594,15 @@ namespace
         {
             if (IsEditableProjectFile(path) && ImGui::MenuItem("Open"))
                 state.requestedOpenPath = path;
+            if (IsEditableProjectFile(path)
+                && (!state.project.has_value() || std::filesystem::absolute(state.project->mainFilePath).lexically_normal() != std::filesystem::absolute(path).lexically_normal())
+                && ImGui::MenuItem("Set As Build Target"))
+            {
+                state.project->mainFilePath = std::filesystem::absolute(path).lexically_normal();
+                SaveProject(*state.project);
+                SaveProjectWorkspace(state);
+                SetUiStatus(state, "Updated build target to " + MakeProjectRelativePath(*state.project, state.project->mainFilePath).generic_string());
+            }
             if (ImGui::MenuItem("Rename (F2)"))
                 StartFileAction(state, FileActionState::Kind::Rename, path, path.parent_path(), path.filename());
             if (ImGui::MenuItem("Copy..."))
