@@ -450,6 +450,17 @@ namespace
         if (std::filesystem::exists(sourceRoot))
             return sourceRoot;
 
+#if defined(_WIN32)
+        std::array<wchar_t, MAX_PATH> modulePathBuffer = {};
+        const DWORD modulePathLength = GetModuleFileNameW(nullptr, modulePathBuffer.data(), static_cast<DWORD>(modulePathBuffer.size()));
+        if (modulePathLength > 0 && modulePathLength < modulePathBuffer.size())
+        {
+            const auto executableRoot = std::filesystem::path(modulePathBuffer.data()).parent_path() / "assets";
+            if (std::filesystem::exists(executableRoot))
+                return executableRoot;
+        }
+#endif
+
         const auto cwdRoot = std::filesystem::path("Torii.Labs") / "assets";
         if (std::filesystem::exists(cwdRoot))
             return cwdRoot;

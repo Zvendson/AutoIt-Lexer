@@ -34,6 +34,30 @@ jobs:
 
           "TORII_RELEASE_ASSET=$assetPath" >> $env:GITHUB_ENV
 
+      - name: Stage release package
+        shell: pwsh
+        run: |
+          $packageRoot = Join-Path $env:RUNNER_TEMP 'ToriiLabs'
+          $packageAssets = Join-Path $packageRoot 'assets'
+          $sourceAssets = Join-Path $env:GITHUB_WORKSPACE 'Torii.Labs\assets'
+
+          if (Test-Path $packageRoot) {
+              Remove-Item $packageRoot -Recurse -Force
+          }
+
+          New-Item -ItemType Directory -Path $packageRoot | Out-Null
+          Copy-Item $env:TORII_RELEASE_ASSET -Destination $packageRoot
+          Copy-Item $sourceAssets -Destination $packageAssets -Recurse
+
+          $zipPath = Join-Path $env:RUNNER_TEMP 'ToriiLabs-windows-x64.zip'
+          if (Test-Path $zipPath) {
+              Remove-Item $zipPath -Force
+          }
+
+          Compress-Archive -Path (Join-Path $packageRoot '*') -DestinationPath $zipPath
+
+          "TORII_RELEASE_ZIP=$zipPath" >> $env:GITHUB_ENV
+
       - name: Create GitHub release and upload editor binary
         shell: pwsh
         env:
@@ -47,10 +71,12 @@ jobs:
               gh release edit $tag --repo $env:GITHUB_REPOSITORY --title $title --notes-file $notesFile
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           } else {
-              gh release create $tag $env:TORII_RELEASE_ASSET --repo $env:GITHUB_REPOSITORY --title $title --notes-file $notesFile --prerelease
+              gh release create $tag $env:TORII_RELEASE_ASSET $env:TORII_RELEASE_ZIP --repo $env:GITHUB_REPOSITORY --title $title --notes-file $notesFile --prerelease
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
               exit 0
           }
 
           gh release upload $tag $env:TORII_RELEASE_ASSET --repo $env:GITHUB_REPOSITORY --clobber
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          gh release upload $tag $env:TORII_RELEASE_ZIP --repo $env:GITHUB_REPOSITORY --clobber
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
