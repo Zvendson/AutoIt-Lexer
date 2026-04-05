@@ -82,13 +82,13 @@ cmake --build build --config Debug
 
 ### Output Paths
 
-- Editor: `bin/Release/ToriiLabs/Torii Labs.exe`
+- Editor: `bin/Release/ToriiLabs/ToriiLabs.exe`
 - CLI: `bin/Release/AutoItPreprocessor/AutoItPreprocessor.exe`
 
 ## Running Torii Labs
 
 ```powershell
-.\bin\Release\ToriiLabs\Torii Labs.exe
+.\bin\Release\ToriiLabs\ToriiLabs.exe
 ```
 
 Current editor version: `0.0.1 Alpha`

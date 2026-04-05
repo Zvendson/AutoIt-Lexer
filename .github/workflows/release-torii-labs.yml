@@ -27,7 +27,7 @@ jobs:
       - name: Resolve release asset path
         shell: pwsh
         run: |
-          $assetPath = Join-Path $env:GITHUB_WORKSPACE 'bin\Release\ToriiLabs\Torii Labs.exe'
+          $assetPath = Join-Path $env:GITHUB_WORKSPACE 'bin\Release\ToriiLabs\ToriiLabs.exe'
           if (-not (Test-Path $assetPath)) {
               throw "Expected release asset was not found: $assetPath"
           }

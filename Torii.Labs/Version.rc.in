@@ -21,7 +21,7 @@ BEGIN
             VALUE "FileDescription", "Torii Labs\0"
             VALUE "FileVersion", "@TORII_LABS_VERSION_LABEL@\0"
             VALUE "InternalName", "ToriiLabs\0"
-            VALUE "OriginalFilename", "Torii Labs.exe\0"
+            VALUE "OriginalFilename", "ToriiLabs.exe\0"
             VALUE "ProductName", "Torii Labs\0"
             VALUE "ProductVersion", "@TORII_LABS_VERSION_LABEL@\0"
         END

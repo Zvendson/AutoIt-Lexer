@@ -169,7 +169,7 @@ foreach(config Debug Release RelWithDebInfo MinSizeRel)
 endforeach()
 
 set_target_properties(ToriiLabs PROPERTIES
-    OUTPUT_NAME "Torii Labs"
+    OUTPUT_NAME "ToriiLabs"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/ToriiLabs"
 )
 
