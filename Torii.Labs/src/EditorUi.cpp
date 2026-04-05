@@ -1005,7 +1005,35 @@ namespace
 
     bool DrawTreeSectionRow(const std::string& id, const std::string& label, int depth, const char* closedIconName, const char* openedIconName, const ImVec4& iconColor, bool defaultOpen = true)
     {
-        return DrawFileTreeRow(id, label, depth, false, true, defaultOpen, closedIconName, openedIconName, iconColor).open;
+        ImGui::PushID(id.c_str());
+        ImGuiStorage* storage = ImGui::GetStateStorage();
+        const ImGuiID openId = ImGui::GetID("##Open");
+        const bool open = storage->GetBool(openId, defaultOpen);
+        const FileTreeRowResult row = DrawFileTreeRow(id, label, depth, false, true, open, closedIconName, openedIconName, iconColor);
+        if (row.toggleOpen)
+            storage->SetBool(openId, row.open);
+        ImGui::PopID();
+        return row.open;
+    }
+
+    FileTreeRowResult DrawStoredTreeRow(
+        const std::string& id,
+        const std::string& label,
+        int depth,
+        const char* closedIconName,
+        const char* openedIconName,
+        const ImVec4& iconColor,
+        bool defaultOpen = false)
+    {
+        ImGui::PushID(id.c_str());
+        ImGuiStorage* storage = ImGui::GetStateStorage();
+        const ImGuiID openId = ImGui::GetID("##Open");
+        const bool open = storage->GetBool(openId, defaultOpen);
+        FileTreeRowResult row = DrawFileTreeRow(id, label, depth, false, true, open, closedIconName, openedIconName, iconColor);
+        if (row.toggleOpen)
+            storage->SetBool(openId, row.open);
+        ImGui::PopID();
+        return row;
     }
 
     void DrawSectionHeader(const char* iconName, const char* title, const std::string* subtitle = nullptr, ImVec4 color = kAccentColor)
@@ -2768,16 +2796,14 @@ namespace
             {
                 for (const auto& function : document.outline.functions)
                 {
-                    const FileTreeRowResult functionRow = DrawFileTreeRow(
+                    const FileTreeRowResult functionRow = DrawStoredTreeRow(
                         "OutlineFunction:" + function.name + ":" + std::to_string(function.line),
                         function.name,
                         1,
-                        false,
-                        true,
-                        false,
                         "symbol-method-arrow",
                         "symbol-method-arrow",
-                        icons.iconSecondary);
+                        icons.iconSecondary,
+                        false);
                     if (functionRow.clicked)
                         JumpToLine(document, function.line);
 
