@@ -1,6 +1,15 @@
 .vs/
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
 bin/
 bin-int/
 *.sln
 *.vcxproj
+*.vcxproj.filters
 *.vcxproj.user
+*_stripped.au3
+/.idea
+/build-test
