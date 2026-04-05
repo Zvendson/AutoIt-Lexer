@@ -4,6 +4,7 @@
 #include "HotkeyManager.h"
 #include "SymbolAnalysis.h"
 #include "TextEditor.h"
+#include "AutoItPreprocessor/Compiler/Compiler.h"
 #include "imgui.h"
 
 #include <cstddef>
@@ -243,6 +244,18 @@ namespace AutoItPlus::Editor
         int exitCode = 0;
     };
 
+    struct BuildTaskResult
+    {
+        bool succeeded = false;
+        bool projectBuild = false;
+        std::filesystem::path documentPath;
+        std::filesystem::path outputPath;
+        std::string previewText;
+        std::string status;
+        std::string error;
+        AutoItPreprocessor::Compiler::CompilationUnit compilation;
+    };
+
     struct RunOutputBuffer
     {
         std::mutex mutex;
@@ -288,6 +301,13 @@ namespace AutoItPlus::Editor
         BuildConfiguration buildConfiguration = BuildConfiguration::Debug;
         BottomPanelTab activeBottomTab = BottomPanelTab::Output;
         std::optional<BottomPanelTab> requestedBottomTab;
+        std::future<BuildTaskResult> buildTask;
+        bool buildInProgress = false;
+        bool runAfterBuild = false;
+        bool hasBuildPreview = false;
+        std::string buildPreviewText;
+        std::string buildPreviewStatus = "No build yet.";
+        AutoItPreprocessor::Compiler::CompilationUnit buildPreviewCompilation;
         std::future<RunTaskResult> runTask;
         std::shared_ptr<RunOutputBuffer> liveRunOutput;
         bool runInProgress = false;

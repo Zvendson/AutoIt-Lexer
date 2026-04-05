@@ -2789,6 +2789,8 @@ namespace
             SyncEditorText(activeDocument, ImGui::GetTime());
             if (activeDocument.dirty && (ImGui::GetTime() - activeDocument.lastEditTime) > 0.30)
                 RefreshLivePreview(state, activeDocument);
+            if (activeDocument.previewText.empty() && state.hasBuildPreview)
+                ApplyBuildPreview(state, activeDocument);
             SyncPreviewHighlight(activeDocument, state.preferences);
             ImGui::Separator();
             if (ImFont* font = ChooseMonoFont(state.preferences.editorZoom))
@@ -3097,6 +3099,7 @@ namespace AutoItPlus::Editor
                 }
 
                 HandleShortcuts(state);
+                PollBuildTask(state);
                 PollRunTask(state);
                 DrawUnsavedDialog(state);
                 DrawPreferences(state);

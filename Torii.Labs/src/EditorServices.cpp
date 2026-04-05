@@ -265,6 +265,13 @@ namespace AutoItPlus::Editor
 {
     namespace
     {
+        bool HasDirtyDocuments(const EditorState& state)
+        {
+            return std::any_of(state.documents.begin(), state.documents.end(), [](const DocumentState& document) {
+                return document.dirty;
+            });
+        }
+
         std::vector<DocumentState::PreviewLineMapping> BuildPreviewLineMappings(
             const AutoItPreprocessor::Compiler::CompilationUnit& compilation,
             const std::filesystem::path& documentPath)
@@ -308,6 +315,27 @@ namespace AutoItPlus::Editor
 
             return mappings;
         }
+
+        void ApplyBuildPreviewToDocument(EditorState& state, DocumentState& document)
+        {
+            if (!state.hasBuildPreview)
+                return;
+
+            document.previewText = state.buildPreviewText;
+            document.previewStatus = state.buildPreviewStatus;
+            document.previewLineMappings = BuildPreviewLineMappings(state.buildPreviewCompilation, document.path);
+            if (document.previewEditor != nullptr)
+            {
+                if (document.previewEditor->GetText() != document.previewText)
+                    document.previewEditor->SetText(document.previewText);
+                document.previewEditor->SetReadOnly(true);
+            }
+        }
+    }
+
+    void ApplyBuildPreview(EditorState& state, DocumentState& document)
+    {
+        ApplyBuildPreviewToDocument(state, document);
     }
 
     std::string ReadTextFile(const std::filesystem::path& path)
@@ -948,6 +976,7 @@ namespace AutoItPlus::Editor
         {
             state.currentDocumentIndex = *existingIndex;
             state.activateDocumentIndex = *existingIndex;
+            ApplyBuildPreviewToDocument(state, CurrentDocument(state));
             state.requestFocusCurrentEditor = true;
             state.selectedProjectPath = std::filesystem::absolute(path).lexically_normal();
             SaveProjectWorkspace(state);
@@ -958,6 +987,7 @@ namespace AutoItPlus::Editor
         state.currentDocumentIndex = state.documents.size() - 1U;
         state.activateDocumentIndex = state.currentDocumentIndex;
         LoadDocumentFromPath(CurrentDocument(state), path, state.preferences);
+        ApplyBuildPreviewToDocument(state, CurrentDocument(state));
         state.requestFocusCurrentEditor = true;
         state.selectedProjectPath = std::filesystem::absolute(path).lexically_normal();
         SaveProjectWorkspace(state);
@@ -1138,35 +1168,48 @@ namespace AutoItPlus::Editor
     {
         if (!state.project.has_value())
             throw std::runtime_error("No project loaded.");
+        if (state.buildInProgress)
+            throw std::runtime_error("Build already in progress.");
 
         SaveAllDocuments(state);
         SaveProject(*state.project);
 
-        AutoItPreprocessor::Compiler::Compiler compiler;
         const DocumentState fallbackDocument{};
         const auto options = BuildCompilerOptions(state, HasOpenDocument(state) ? CurrentDocument(state) : fallbackDocument);
-        const auto compilation = compiler.Compile(state.project->mainFilePath, options);
-        const auto& outputPath = GetProjectBuildOutputPath(*state.project, state.buildConfiguration);
-        const auto generatedCode = SanitizeUtf8Lossy(compilation.generatedCode);
-        WriteTextFile(outputPath, generatedCode);
-
+        const auto mainFilePath = state.project->mainFilePath;
+        const auto outputPath = GetProjectBuildOutputPath(*state.project, state.buildConfiguration);
+        const auto buildLabel = std::string(BuildConfigurationLabel(state.buildConfiguration));
+        state.buildInProgress = true;
+        state.buildPreviewStatus = "Building project...";
         if (HasOpenDocument(state))
-        {
-            auto& document = CurrentDocument(state);
-            document.outputText = generatedCode;
-            document.outputKind = OutputKind::Compiled;
-            document.previewText = generatedCode;
-            document.previewLineMappings = BuildPreviewLineMappings(compilation, document.path);
-            if (document.previewEditor != nullptr)
-                document.previewEditor->SetText(document.previewText);
-            document.previewStatus = "Build updated preview.";
-            document.status = "Built " + outputPath.string() + " [" + BuildConfigurationLabel(state.buildConfiguration) + "]";
-            SyncPreviewHighlight(document, state.preferences);
-        }
+            CurrentDocument(state).status = state.buildPreviewStatus;
+        state.buildTask = std::async(std::launch::async, [mainFilePath, options, outputPath, buildLabel]() -> BuildTaskResult {
+            BuildTaskResult result;
+            result.projectBuild = true;
+            result.documentPath = mainFilePath;
+            result.outputPath = outputPath;
+            try
+            {
+                AutoItPreprocessor::Compiler::Compiler compiler;
+                result.compilation = compiler.Compile(mainFilePath, options);
+                result.previewText = SanitizeUtf8Lossy(result.compilation.generatedCode);
+                WriteTextFile(outputPath, result.previewText);
+                result.status = "Built " + outputPath.string() + " [" + buildLabel + "]";
+                result.succeeded = true;
+            }
+            catch (const std::exception& exception)
+            {
+                result.error = exception.what();
+            }
+            return result;
+        });
     }
 
     void BuildCurrentDocument(EditorState& state)
     {
+        if (state.buildInProgress)
+            throw std::runtime_error("Build already in progress.");
+
         if (state.project.has_value())
         {
             BuildProject(state);
@@ -1174,17 +1217,32 @@ namespace AutoItPlus::Editor
         }
 
         auto& document = CurrentDocument(state);
-        const auto compilation = RunCompilation(state, document);
-        document.outputText = SanitizeUtf8Lossy(compilation.generatedCode);
-        document.outputKind = OutputKind::Compiled;
-        document.tokenView.clear();
-        document.previewText = document.outputText;
-        document.previewLineMappings = BuildPreviewLineMappings(compilation, document.path);
-        if (document.previewEditor != nullptr)
-            document.previewEditor->SetText(document.previewText);
-        document.previewStatus = "Build updated preview.";
-        document.status = "Built preview for " + document.title;
-        SyncPreviewHighlight(document, state.preferences);
+        const auto sourceDocument = AutoItPreprocessor::Common::SourceDocument{
+            .path = document.path,
+            .text = document.editor->GetText()
+        };
+        const auto options = BuildCompilerOptions(state, document);
+        const auto documentTitle = document.title;
+        state.buildInProgress = true;
+        document.status = "Building preview...";
+        state.buildPreviewStatus = "Building preview...";
+        state.buildTask = std::async(std::launch::async, [sourceDocument, options, documentTitle]() -> BuildTaskResult {
+            BuildTaskResult result;
+            result.documentPath = sourceDocument.path;
+            try
+            {
+                AutoItPreprocessor::Compiler::Compiler compiler;
+                result.compilation = compiler.Compile(sourceDocument, options);
+                result.previewText = SanitizeUtf8Lossy(result.compilation.generatedCode);
+                result.status = "Built preview for " + documentTitle;
+                result.succeeded = true;
+            }
+            catch (const std::exception& exception)
+            {
+                result.error = exception.what();
+            }
+            return result;
+        });
     }
 
     void RunBuiltProject(EditorState& state)
@@ -1196,12 +1254,23 @@ namespace AutoItPlus::Editor
         if (state.runInProgress)
             throw std::runtime_error("Run already in progress.");
 
-        BuildProject(state);
+        if (state.buildInProgress)
+        {
+            state.runAfterBuild = true;
+            return;
+        }
 
         const auto interpreterPath = FindAutoItInterpreterPath();
         if (!interpreterPath.has_value())
             throw std::runtime_error("Could not locate AutoIt3.exe in the registry.");
         const auto& outputPath = GetProjectBuildOutputPath(*state.project, state.buildConfiguration);
+        if (HasDirtyDocuments(state) || !state.hasBuildPreview || !std::filesystem::exists(outputPath))
+        {
+            state.runAfterBuild = true;
+            BuildProject(state);
+            return;
+        }
+
         const auto rootDirectory = state.project->rootDirectory;
         const auto buildLabel = std::string(BuildConfigurationLabel(state.buildConfiguration));
         const std::string commandLineUtf8 = "\"" + interpreterPath->string() + "\" /ErrorStdOut \"" + outputPath.string() + "\"";
@@ -1385,6 +1454,69 @@ namespace AutoItPlus::Editor
         (void)state;
         throw std::runtime_error("Run is currently only implemented on Windows.");
 #endif
+    }
+
+    void PollBuildTask(EditorState& state)
+    {
+        if (!state.buildInProgress)
+            return;
+
+        if (!state.buildTask.valid())
+        {
+            state.buildInProgress = false;
+            state.runAfterBuild = false;
+            return;
+        }
+
+        if (state.buildTask.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
+            return;
+
+        try
+        {
+            auto result = state.buildTask.get();
+            state.buildInProgress = false;
+
+            if (!result.succeeded)
+                throw std::runtime_error(result.error.empty() ? "Build failed." : result.error);
+
+            state.hasBuildPreview = true;
+            state.buildPreviewText = std::move(result.previewText);
+            state.buildPreviewStatus = result.status;
+            state.buildPreviewCompilation = std::move(result.compilation);
+
+            if (HasOpenDocument(state))
+            {
+                auto& document = CurrentDocument(state);
+                ApplyBuildPreviewToDocument(state, document);
+                document.outputText = document.previewText;
+                document.outputKind = OutputKind::Compiled;
+                document.tokenView.clear();
+                document.status = result.status;
+                document.previewDirty = false;
+                SyncPreviewHighlight(document, state.preferences);
+            }
+
+            state.outputLog += "[INFO] " + result.status + "\n";
+            if (state.outputEditor != nullptr)
+                SetLoggerText(*state.outputEditor, state.outputLog);
+        }
+        catch (const std::exception& exception)
+        {
+            state.buildInProgress = false;
+            state.runAfterBuild = false;
+            if (HasOpenDocument(state))
+                CurrentDocument(state).status = exception.what();
+            state.outputLog += "[ERROR] " + std::string(exception.what()) + "\n";
+            if (state.outputEditor != nullptr)
+                SetLoggerText(*state.outputEditor, state.outputLog);
+            return;
+        }
+
+        if (state.runAfterBuild)
+        {
+            state.runAfterBuild = false;
+            RunBuiltProject(state);
+        }
     }
 
     void PollRunTask(EditorState& state)

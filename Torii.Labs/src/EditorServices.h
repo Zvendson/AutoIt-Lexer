@@ -38,6 +38,7 @@ namespace AutoItPlus::Editor
     AutoItPreprocessor::Compiler::CompilerOptions BuildCompilerOptions(const EditorState& state, const DocumentState& document);
     AutoItPreprocessor::Compiler::CompilationUnit RunCompilation(const EditorState& state, const DocumentState& document);
     void RefreshLivePreview(EditorState& state, DocumentState& document);
+    void ApplyBuildPreview(EditorState& state, DocumentState& document);
     void SyncPreviewHighlight(DocumentState& document, const EditorPreferences& preferences);
 
     void LoadDocumentFromPath(DocumentState& document, const std::filesystem::path& path, const EditorPreferences& preferences);
@@ -77,6 +78,7 @@ namespace AutoItPlus::Editor
     void BuildProject(EditorState& state);
     void BuildCurrentDocument(EditorState& state);
     void RunBuiltProject(EditorState& state);
+    void PollBuildTask(EditorState& state);
     void PollRunTask(EditorState& state);
 
     void CreateNewDocument(EditorState& state);
