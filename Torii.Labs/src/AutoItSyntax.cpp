@@ -280,6 +280,11 @@ namespace AutoItPlus::Editor
             editor.SetText(text);
     }
 
+    void SetLoggerText(ConsoleWidget& editor, const std::string& text)
+    {
+        editor.SetLoggerText(text);
+    }
+
     TextEditor::LanguageDefinition BuildLanguageDefinition(SyntaxFlavor flavor)
     {
         switch (flavor)
@@ -316,6 +321,11 @@ namespace AutoItPlus::Editor
         editor.SetPalette(BuildPalette(flavor, preferences));
     }
 
+    void ApplySyntaxFlavor(ConsoleWidget& editor, SyntaxFlavor flavor, const EditorPreferences& preferences)
+    {
+        ApplySyntaxFlavor(editor.GetEditor(), flavor, preferences);
+    }
+
     SyntaxFlavor DetermineSourceSyntax(const std::filesystem::path& path)
     {
         return path.extension() == ".au3" ? SyntaxFlavor::AutoIt : SyntaxFlavor::AutoItPlus;
@@ -329,5 +339,10 @@ namespace AutoItPlus::Editor
         editor->SetShowWhitespaces(false);
         editor->SetReadOnly(readOnly);
         return editor;
+    }
+
+    std::unique_ptr<ConsoleWidget> CreateConsoleWidget(const EditorPreferences& preferences)
+    {
+        return std::make_unique<ConsoleWidget>(CreateTextEditor(SyntaxFlavor::Logger, preferences, true));
     }
 }

@@ -51,6 +51,7 @@ namespace
 
     void ApplyPreferences(EditorState& state);
     void SetupStyle(const EditorPreferences& preferences);
+    std::string Trim(const std::string& value);
 
     struct ThemeDefinition
     {
@@ -713,20 +714,20 @@ namespace
             ImFontGlyphRangesBuilder builder;
             builder.AddRanges(io.Fonts->GetGlyphRangesDefault());
             static const ImWchar kExtraRanges[] = {
-                0x00A0, 0x00FF,
-                0x0100, 0x017F,
-                0x0180, 0x024F,
-                0x2000, 0x206F,
-                0x2070, 0x209F,
-                0x20A0, 0x20CF,
-                0x2190, 0x21FF,
-                0x2200, 0x22FF,
-                0x2300, 0x23FF,
-                0x2500, 0x257F,
-                0x2580, 0x259F,
-                0x25A0, 0x25FF,
-                0x2600, 0x26FF,
-                0x2700, 0x27BF,
+                0x00A0, 0x00FF, // Latin-1 supplement
+                0x0100, 0x017F, // Latin extended-A
+                0x0180, 0x024F, // Latin extended-B
+                0x2000, 0x206F, // General punctuation
+                0x2070, 0x209F, // Superscripts/Subscripts
+                0x20A0, 0x20CF, // Currency symbols
+                0x2190, 0x21FF, // Arrows
+                0x2200, 0x22FF, // Mathematical operators
+                0x2300, 0x23FF, // Misc technical
+                0x2500, 0x257F, // Box drawing
+                0x2580, 0x259F, // Block elements
+                0x25A0, 0x25FF, // Geometric shapes
+                0x2600, 0x26FF, // Misc symbols
+                0x2700, 0x27BF, // Dingbats
                 0,
             };
             builder.AddRanges(kExtraRanges);
@@ -740,13 +741,13 @@ namespace
 
         for (const float size : sizes)
         {
-            if (ImFont* font = io.Fonts->AddFontFromFileTTF(monoFontPath.string().c_str(), size, &config))
+            if (ImFont* font = io.Fonts->AddFontFromFileTTF(monoFontPath.string().c_str(), size, &config, extendedGlyphRanges.Data))
             {
                 g_editorFonts.sizes.push_back(size);
                 g_editorFonts.fonts.push_back(font);
             }
 
-            if (ImFont* font = io.Fonts->AddFontFromFileTTF(uiFontPath.string().c_str(), size, &config))
+            if (ImFont* font = io.Fonts->AddFontFromFileTTF(uiFontPath.string().c_str(), size, &config, extendedGlyphRanges.Data))
             {
                 g_uiFonts.sizes.push_back(size);
                 g_uiFonts.fonts.push_back(font);
@@ -1440,6 +1441,81 @@ namespace
         ImGui::End();
     }
 
+    void OpenProjectSettings(EditorState& state)
+    {
+        if (!state.project.has_value())
+            return;
+
+        state.projectSettingsDialog.show = true;
+        state.projectSettingsDialog.mainFilePath = MakeProjectRelativePath(*state.project, state.project->mainFilePath).generic_string();
+        if (state.projectSettingsDialog.mainFilePath.empty())
+            state.projectSettingsDialog.mainFilePath = (std::filesystem::path("code") / "Main.aup").generic_string();
+    }
+
+    void DrawProjectSettings(EditorState& state)
+    {
+        if (!state.project.has_value() || !state.projectSettingsDialog.show)
+            return;
+
+        auto& project = *state.project;
+        auto& dialog = state.projectSettingsDialog;
+
+        ImGui::SetNextWindowSize(ImVec2(520.0f, 220.0f), ImGuiCond_FirstUseEver);
+        if (!ImGui::Begin("Project Settings", &dialog.show, ImGuiWindowFlags_NoCollapse))
+            return;
+
+        ImGui::TextDisabled("%s", project.projectFilePath.string().c_str());
+        ImGui::Separator();
+        ImGui::TextWrapped("Set the main source file used for build and run. The path must stay inside the project `code/` directory.");
+        ImGui::Spacing();
+
+        ImGui::TextUnformatted("Main File");
+        ImGui::InputText("##ProjectMainFile", &dialog.mainFilePath);
+
+        const auto trimmedInput = Trim(dialog.mainFilePath);
+        const auto codeDirectory = project.rootDirectory / "code";
+        const auto candidateRelative = std::filesystem::path(trimmedInput);
+        const auto candidateAbsolute = candidateRelative.is_absolute()
+            ? candidateRelative.lexically_normal()
+            : (project.rootDirectory / candidateRelative).lexically_normal();
+        const auto candidateWithinCode = candidateAbsolute.lexically_relative(codeDirectory.lexically_normal());
+        const bool inputEmpty = trimmedInput.empty();
+        const bool insideCode = !candidateWithinCode.empty() && *candidateWithinCode.begin() != "..";
+        const bool supportedExtension = candidateAbsolute.extension() == ".aup" || candidateAbsolute.extension() == ".au3";
+
+        if (inputEmpty)
+            ImGui::TextColored(ImVec4(0.92f, 0.56f, 0.46f, 1.0f), "Main file is required.");
+        else if (!insideCode)
+            ImGui::TextColored(ImVec4(0.92f, 0.56f, 0.46f, 1.0f), "Main file must be inside code/.");
+        else if (!supportedExtension)
+            ImGui::TextColored(ImVec4(0.92f, 0.56f, 0.46f, 1.0f), "Main file must use .aup or .au3.");
+        else
+            ImGui::TextDisabled("Resolved: %s", candidateAbsolute.string().c_str());
+
+        ImGui::Spacing();
+        const bool canApply = !inputEmpty && insideCode && supportedExtension;
+        if (!canApply)
+            ImGui::BeginDisabled();
+        if (ImGui::Button("Apply", ImVec2(100.0f, 0.0f)))
+        {
+            project.mainFilePath = candidateAbsolute;
+            SaveProject(project);
+            dialog.mainFilePath = MakeProjectRelativePath(project, project.mainFilePath).generic_string();
+            if (HasOpenDocument(state))
+                CurrentDocument(state).status = "Updated project main file to " + dialog.mainFilePath;
+            SaveProjectWorkspace(state);
+            dialog.show = false;
+        }
+        if (!canApply)
+            ImGui::EndDisabled();
+
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(100.0f, 0.0f)))
+            dialog.show = false;
+
+        ImGui::End();
+    }
+
     struct ScopedFont
     {
         explicit ScopedFont(ImFont* font) : mActive(font != nullptr)
@@ -1456,6 +1532,16 @@ namespace
 
         bool mActive;
     };
+
+    std::string Trim(const std::string& value)
+    {
+        const auto begin = value.find_first_not_of(" \t\r\n");
+        if (begin == std::string::npos)
+            return {};
+
+        const auto end = value.find_last_not_of(" \t\r\n");
+        return value.substr(begin, end - begin + 1U);
+    }
 
     void DrawInlineDivider()
     {
@@ -2252,6 +2338,11 @@ namespace
                     StartFileAction(state, FileActionState::Kind::NewFolder, {}, state.project->rootDirectory / "code", "NewFolder");
                 if (ImGui::IsItemHovered())
                     ImGui::SetTooltip("New Folder");
+                ImGui::SameLine();
+                if (DrawToolbarButton("SidebarProjectSettings", "gear-fill", "", true, icons.iconNeutral))
+                    OpenProjectSettings(state);
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("Project Settings");
 
                 ImGui::Separator();
                 DrawSectionHeader("root-folder-opened", "Code", nullptr, icons.iconSecondary);
@@ -2723,7 +2814,6 @@ namespace
                     {
                         if (ImFont* font = ChooseMonoFont(state.preferences.outputZoom))
                             ImGui::PushFont(font);
-                        state.outputEditor->SetImGuiChildIgnored(false);
                         state.outputEditor->Render("OutputEditor", ImVec2(-1.0f, -1.0f));
                         const bool outputHovered =
                             ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup)
@@ -2750,7 +2840,6 @@ namespace
                     {
                         if (ImFont* font = ChooseMonoFont(state.preferences.outputZoom))
                             ImGui::PushFont(font);
-                        state.runEditor->SetImGuiChildIgnored(false);
                         state.runEditor->Render("RunOutputEditor", ImVec2(-1.0f, -1.0f));
                         const bool runHovered =
                             ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup)
@@ -2912,9 +3001,9 @@ namespace AutoItPlus::Editor
         ImGui_ImplGlfw_InitForOpenGL(window, true);
         ImGui_ImplOpenGL3_Init("#version 330");
 
-        state.outputEditor = CreateTextEditor(SyntaxFlavor::Logger, state.preferences, true);
+        state.outputEditor = CreateConsoleWidget(state.preferences);
         SetLoggerText(*state.outputEditor, state.outputLog);
-        state.runEditor = CreateTextEditor(SyntaxFlavor::Logger, state.preferences, true);
+        state.runEditor = CreateConsoleWidget(state.preferences);
         SetLoggerText(*state.runEditor, state.runOutput);
         ApplyPreferences(state);
         ConfigureDefaultHotkeys(state);
@@ -2949,6 +3038,7 @@ namespace AutoItPlus::Editor
                 PollRunTask(state);
                 DrawUnsavedDialog(state);
                 DrawPreferences(state);
+                DrawProjectSettings(state);
 
                 const float statusBarHeight = 22.0f;
                 ImGui::BeginChild("MainContent", ImVec2(0.0f, -statusBarHeight), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);

@@ -32,6 +32,7 @@ TextEditor::TextEditor()
 	, mReadOnly(false)
 	, mWithinRender(false)
 	, mScrollToCursor(false)
+	, mScrollToBottom(false)
 	, mScrollToTop(false)
 	, mTextChanged(false)
 	, mFocused(false)
@@ -1136,6 +1137,12 @@ void TextEditor::Render()
 
 	ImGui::Dummy(ImVec2((longest + 2), mLines.size() * mCharAdvance.y));
 
+	if (mScrollToBottom)
+	{
+		mScrollToBottom = false;
+		ImGui::SetScrollY(ImGui::GetScrollMaxY());
+	}
+
 	if (mScrollToCursor)
 	{
 		EnsureCursorVisible();
@@ -1183,6 +1190,11 @@ void TextEditor::Render(const char* aTitle, const ImVec2& aSize, bool aBorder)
 
 void TextEditor::SetText(const std::string & aText)
 {
+	SetText(aText, true);
+}
+
+void TextEditor::SetText(const std::string& aText, bool aScrollToTop)
+{
 	mColorizerEnabled = true;
 	mLines.clear();
 	mLines.emplace_back(Line());
@@ -1201,7 +1213,7 @@ void TextEditor::SetText(const std::string & aText)
 	}
 
 	mTextChanged = true;
-	mScrollToTop = true;
+	mScrollToTop = aScrollToTop;
 
 	mUndoBuffer.clear();
 	mUndoIndex = 0;
@@ -1210,6 +1222,11 @@ void TextEditor::SetText(const std::string & aText)
 }
 
 void TextEditor::SetAnsiText(const std::string& aText)
+{
+	SetAnsiText(aText, true);
+}
+
+void TextEditor::SetAnsiText(const std::string& aText, bool aScrollToTop)
 {
 	mColorizerEnabled = false;
 	mLines.clear();
@@ -1407,12 +1424,18 @@ void TextEditor::SetAnsiText(const std::string& aText)
 	}
 
 	mTextChanged = true;
-	mScrollToTop = true;
+	mScrollToTop = aScrollToTop;
 	mUndoBuffer.clear();
 	mUndoIndex = 0;
 	mColorRangeMin = 0;
 	mColorRangeMax = 0;
 	mCheckComments = false;
+}
+
+void TextEditor::RequestScrollToBottom()
+{
+	mScrollToTop = false;
+	mScrollToBottom = true;
 }
 
 void TextEditor::SetTextLines(const std::vector<std::string> & aLines)

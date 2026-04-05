@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ConsoleWidget.h"
 #include "HotkeyManager.h"
 #include "SymbolAnalysis.h"
 #include "TextEditor.h"
@@ -196,6 +197,12 @@ namespace AutoItPlus::Editor
         std::string customRuleFiles;
     };
 
+    struct ProjectSettingsDialogState
+    {
+        bool show = false;
+        std::string mainFilePath;
+    };
+
     struct FileActionState
     {
         enum class Kind
@@ -251,12 +258,13 @@ namespace AutoItPlus::Editor
         std::string runOutput;
         std::string runStatus = "Idle.";
         std::string outputLog;
-        std::unique_ptr<TextEditor> outputEditor;
-        std::unique_ptr<TextEditor> runEditor;
+        std::unique_ptr<ConsoleWidget> outputEditor;
+        std::unique_ptr<ConsoleWidget> runEditor;
         std::optional<std::filesystem::path> selectedProjectPath;
         std::optional<std::filesystem::path> requestedOpenPath;
         bool requestFocusCurrentEditor = false;
         EditorPreferences preferences;
+        ProjectSettingsDialogState projectSettingsDialog;
         std::unordered_map<std::string, std::string> shortcutOverrides;
         std::unordered_map<std::string, std::string> shortcutEditBuffers;
         HotkeyManager hotkeys;

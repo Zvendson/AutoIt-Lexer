@@ -207,7 +207,9 @@ public:
 
 	void Render(const char* aTitle, const ImVec2& aSize = ImVec2(), bool aBorder = false);
 	void SetText(const std::string& aText);
+	void SetText(const std::string& aText, bool aScrollToTop);
 	void SetAnsiText(const std::string& aText);
+	void SetAnsiText(const std::string& aText, bool aScrollToTop);
 	std::string GetText() const;
 
 	void SetTextLines(const std::vector<std::string>& aLines);
@@ -244,6 +246,7 @@ public:
 	inline bool IsShowingWhitespaces() const { return mShowWhitespaces; }
 	inline void SetShowLineNumbers(bool aValue) { mShowLineNumbers = aValue; }
 	inline bool IsShowingLineNumbers() const { return mShowLineNumbers; }
+	void RequestScrollToBottom();
 
 	void SetTabSize(int aValue);
 	inline int GetTabSize() const { return mTabSize; }
@@ -376,6 +379,7 @@ private:
 	bool mReadOnly;
 	bool mWithinRender;
 	bool mScrollToCursor;
+	bool mScrollToBottom;
 	bool mScrollToTop;
 	bool mTextChanged;
 	bool mFocused;

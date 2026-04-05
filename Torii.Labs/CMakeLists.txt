@@ -66,6 +66,7 @@ add_library(AutoItPreprocessor.ImGui STATIC
     ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
     ${imgui_SOURCE_DIR}/misc/cpp/imgui_stdlib.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/imgui_widgets/ConsoleWidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/imgui_widgets/TextEditor.cpp
 )
 

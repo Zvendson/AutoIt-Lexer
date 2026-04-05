@@ -29,8 +29,13 @@ namespace AutoItPlus::Editor::Settings
 
     ProjectSettingsFile::Json ProjectSettingsFile::Serialize() const
     {
+        auto mainFile = mProject.mainFilePath.lexically_relative(mProject.rootDirectory);
+        if (mainFile.empty())
+            mainFile = std::filesystem::path("code") / "Main.aup";
+
         return Json{
             {"name", mProject.name},
+            {"mainFile", mainFile.generic_string()},
             {"includeDirectories", mProject.includeDirectories},
             {"customRuleFiles", mProject.customRuleFiles}
         };
@@ -39,6 +44,8 @@ namespace AutoItPlus::Editor::Settings
     void ProjectSettingsFile::DeserializeJson(const Json& json)
     {
         mProject.name = json.value("name", mProject.name);
+        if (const auto mainFile = json.find("mainFile"); mainFile != json.end() && mainFile->is_string())
+            mProject.mainFilePath = mProject.rootDirectory / std::filesystem::path(mainFile->get<std::string>());
         mProject.includeDirectories = json.value("includeDirectories", mProject.includeDirectories);
         mProject.customRuleFiles = json.value("customRuleFiles", mProject.customRuleFiles);
         ApplyStrictLayout();
@@ -64,6 +71,8 @@ namespace AutoItPlus::Editor::Settings
 
             if (key == "name")
                 mProject.name = value;
+            else if (key == "main" || key == "main_file")
+                mProject.mainFilePath = mProject.rootDirectory / std::filesystem::path(value);
             else if (key == "include_dirs")
                 mProject.includeDirectories = value;
             else if (key == "custom_rules")
@@ -75,7 +84,10 @@ namespace AutoItPlus::Editor::Settings
 
     void ProjectSettingsFile::ApplyStrictLayout()
     {
-        mProject.mainFilePath = mProject.rootDirectory / "code" / "Main.aup";
+        if (mProject.mainFilePath.empty())
+            mProject.mainFilePath = mProject.rootDirectory / "code" / "Main.aup";
+        else if (!mProject.mainFilePath.is_absolute())
+            mProject.mainFilePath = (mProject.rootDirectory / mProject.mainFilePath).lexically_normal();
         mProject.debugOutputFilePath = mProject.rootDirectory / "build" / "debug" / (mProject.name + ".au3");
         mProject.releaseOutputFilePath = mProject.rootDirectory / "build" / "release" / (mProject.name + ".au3");
     }

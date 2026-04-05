@@ -36,6 +36,8 @@ namespace
 
     std::filesystem::path GetProjectMainFilePath(const AutoItPlus::Editor::ProjectState& project)
     {
+        if (!project.mainFilePath.empty())
+            return project.mainFilePath;
         return GetProjectCodeDirectory(project) / "Main.aup";
     }
 
