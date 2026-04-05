@@ -8,6 +8,7 @@ namespace AutoItPlus::Editor::Settings
     struct WorkspaceSessionData
     {
         std::vector<std::filesystem::path> openFiles;
+        std::vector<std::filesystem::path> expandedDirectories;
         std::size_t currentIndex = 0;
         BuildConfiguration buildConfiguration = BuildConfiguration::Debug;
     };

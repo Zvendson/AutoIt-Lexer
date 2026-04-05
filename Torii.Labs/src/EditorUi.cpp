@@ -141,7 +141,9 @@ namespace
                         .iconPrimary = ImVec4(0.73f, 0.34f, 0.29f, 1.0f),
                         .iconSecondary = ImVec4(0.80f, 0.55f, 0.38f, 1.0f),
                         .iconNeutral = ImVec4(0.64f, 0.54f, 0.57f, 1.0f),
-                        .iconSuccess = ImVec4(0.84f, 0.41f, 0.34f, 1.0f)
+                        .iconSuccess = ImVec4(0.84f, 0.41f, 0.34f, 1.0f),
+                        .directoryDropHighlight = ImVec4(0.78f, 0.42f, 0.46f, 0.16f),
+                        .fileDropLine = ImVec4(0.88f, 0.58f, 0.60f, 0.88f)
                     }
                 };
             case ThemePreset::Forest:
@@ -204,7 +206,9 @@ namespace
                         .iconPrimary = ImVec4(0.56f, 0.86f, 0.70f, 1.0f),
                         .iconSecondary = ImVec4(0.92f, 0.77f, 0.40f, 1.0f),
                         .iconNeutral = ImVec4(0.80f, 0.88f, 0.83f, 1.0f),
-                        .iconSuccess = ImVec4(0.49f, 0.90f, 0.62f, 1.0f)
+                        .iconSuccess = ImVec4(0.49f, 0.90f, 0.62f, 1.0f),
+                        .directoryDropHighlight = ImVec4(0.36f, 0.66f, 0.50f, 0.16f),
+                        .fileDropLine = ImVec4(0.63f, 0.84f, 0.58f, 0.88f)
                     }
                 };
             case ThemePreset::Daylight:
@@ -267,7 +271,9 @@ namespace
                         .iconPrimary = ImVec4(0.20f, 0.49f, 0.84f, 1.0f),
                         .iconSecondary = ImVec4(0.74f, 0.56f, 0.20f, 1.0f),
                         .iconNeutral = ImVec4(0.36f, 0.47f, 0.60f, 1.0f),
-                        .iconSuccess = ImVec4(0.19f, 0.63f, 0.47f, 1.0f)
+                        .iconSuccess = ImVec4(0.19f, 0.63f, 0.47f, 1.0f),
+                        .directoryDropHighlight = ImVec4(0.58f, 0.76f, 0.97f, 0.14f),
+                        .fileDropLine = ImVec4(0.34f, 0.58f, 0.88f, 0.86f)
                     }
                 };
             case ThemePreset::Midnight:
@@ -288,7 +294,36 @@ namespace
                         ImVec4(0.15f, 0.20f, 0.26f, 0.42f)
                     },
                     .previewMappingHighlight = ImVec4(0.28f, 0.46f, 0.77f, 0.28f),
-                    .uiTheme = {}
+                    .uiTheme = {
+                        .accentColor = ImVec4(0.20f, 0.55f, 0.93f, 1.0f),
+                        .accentSoftColor = ImVec4(0.17f, 0.27f, 0.38f, 1.0f),
+                        .panelColor = ImVec4(0.09f, 0.11f, 0.15f, 1.0f),
+                        .panelAltColor = ImVec4(0.11f, 0.13f, 0.18f, 1.0f),
+                        .windowBg = ImVec4(0.05f, 0.06f, 0.09f, 1.0f),
+                        .menuBarBg = ImVec4(0.08f, 0.10f, 0.14f, 1.0f),
+                        .borderColor = ImVec4(0.16f, 0.21f, 0.29f, 1.0f),
+                        .headerHovered = ImVec4(0.24f, 0.39f, 0.58f, 1.0f),
+                        .buttonHovered = ImVec4(0.25f, 0.43f, 0.63f, 1.0f),
+                        .buttonActive = ImVec4(0.18f, 0.34f, 0.51f, 1.0f),
+                        .frameBg = ImVec4(0.10f, 0.12f, 0.17f, 1.0f),
+                        .frameBgHovered = ImVec4(0.14f, 0.18f, 0.25f, 1.0f),
+                        .tabColor = ImVec4(0.11f, 0.14f, 0.19f, 1.0f),
+                        .tabHovered = ImVec4(0.19f, 0.29f, 0.42f, 1.0f),
+                        .titleBg = ImVec4(0.09f, 0.11f, 0.15f, 1.0f),
+                        .titleBgActive = ImVec4(0.11f, 0.14f, 0.19f, 1.0f),
+                        .separatorColor = ImVec4(0.16f, 0.21f, 0.29f, 1.0f),
+                        .resizeGrip = ImVec4(0.18f, 0.31f, 0.47f, 0.5f),
+                        .sliderGrabActive = ImVec4(0.31f, 0.65f, 1.0f, 1.0f),
+                        .textColor = ImVec4(0.88f, 0.92f, 0.97f, 1.0f),
+                        .textDisabledColor = ImVec4(0.56f, 0.63f, 0.73f, 1.0f),
+                        .popupBg = ImVec4(0.08f, 0.10f, 0.14f, 1.0f),
+                        .iconPrimary = ImVec4(0.59f, 0.82f, 1.0f, 1.0f),
+                        .iconSecondary = ImVec4(0.96f, 0.76f, 0.36f, 1.0f),
+                        .iconNeutral = ImVec4(0.82f, 0.86f, 0.93f, 1.0f),
+                        .iconSuccess = ImVec4(0.40f, 0.86f, 0.64f, 1.0f),
+                        .directoryDropHighlight = ImVec4(0.34f, 0.48f, 0.78f, 0.16f),
+                        .fileDropLine = ImVec4(0.54f, 0.74f, 1.0f, 0.86f)
+                    }
                 };
         }
 
@@ -812,6 +847,7 @@ namespace
         bool clicked = false;
         bool doubleClicked = false;
         bool open = false;
+        bool toggleOpen = false;
     };
 
     FileTreeRowResult DrawFileTreeRow(
@@ -820,23 +856,21 @@ namespace
         int depth,
         bool selected,
         bool isDirectory,
-        bool defaultOpen,
+        bool open,
         const char* closedIconName,
         const char* openedIconName,
         const ImVec4& iconColor)
     {
         constexpr float kRowHeight = 24.0f;
         constexpr float kIndentWidth = 18.0f;
-        constexpr float kRowPaddingX = 6.0f;
+        constexpr float kRowPaddingX = 12.0f;
         constexpr float kIconSize = 18.0f;
         constexpr float kIconTextGap = 8.0f;
 
         FileTreeRowResult result;
 
         ImGui::PushID(id.c_str());
-        ImGuiStorage* storage = ImGui::GetStateStorage();
-        const ImGuiID openId = ImGui::GetID("##Open");
-        result.open = isDirectory ? storage->GetBool(openId, defaultOpen) : false;
+        result.open = isDirectory ? open : false;
 
         const float rowWidth = std::max(1.0f, ImGui::GetContentRegionAvail().x);
         ImGui::InvisibleButton("##Row", ImVec2(rowWidth, kRowHeight));
@@ -884,8 +918,8 @@ namespace
                 mousePos.y >= itemMin.y && mousePos.y <= itemMax.y;
             if (iconClicked || result.doubleClicked)
             {
+                result.toggleOpen = true;
                 result.open = !result.open;
-                storage->SetBool(openId, result.open);
             }
         }
 
@@ -1417,6 +1451,8 @@ namespace
                 shellChanged |= ImGui::ColorEdit4("Icon Secondary", &state.preferences.uiTheme.iconSecondary.x);
                 shellChanged |= ImGui::ColorEdit4("Icon Neutral", &state.preferences.uiTheme.iconNeutral.x);
                 shellChanged |= ImGui::ColorEdit4("Icon Success", &state.preferences.uiTheme.iconSuccess.x);
+                shellChanged |= ImGui::ColorEdit4("Drop Directory", &state.preferences.uiTheme.directoryDropHighlight.x);
+                shellChanged |= ImGui::ColorEdit4("Drop File Line", &state.preferences.uiTheme.fileDropLine.x);
                 shellChanged |= ImGui::ColorEdit4("Button Hover", &state.preferences.uiTheme.buttonHovered.x);
                 shellChanged |= ImGui::ColorEdit4("Button Active", &state.preferences.uiTheme.buttonActive.x);
                 shellChanged |= ImGui::ColorEdit4("Frame", &state.preferences.uiTheme.frameBg.x);
@@ -2297,6 +2333,77 @@ namespace
 
     void DrawProjectTreeNode(EditorState& state, const ProjectTreeNode& node, int depth)
     {
+        auto toggleDirectoryExpansion = [&](const std::filesystem::path& directoryPath, bool expanded) {
+            const auto key = std::filesystem::absolute(directoryPath).lexically_normal().generic_string();
+            if (expanded)
+                state.expandedProjectDirectories.insert(key);
+            else
+                state.expandedProjectDirectories.erase(key);
+            SaveProjectWorkspace(state);
+        };
+
+        auto handleProjectTreeDrop = [&](const std::filesystem::path& dropTargetDirectory, bool /*directoryStyle*/) {
+            if (!ImGui::BeginDragDropTarget())
+                return;
+
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(
+                "PROJECT_PATH",
+                ImGuiDragDropFlags_AcceptNoDrawDefaultRect | ImGuiDragDropFlags_AcceptBeforeDelivery))
+            {
+                if (payload->IsPreview())
+                {
+                    state.projectTreeDropPreviewDirectory = std::filesystem::absolute(dropTargetDirectory).lexically_normal();
+                }
+
+                if (!payload->IsDelivery())
+                {
+                    ImGui::EndDragDropTarget();
+                    return;
+                }
+
+                const auto* rawPath = static_cast<const char*>(payload->Data);
+                std::filesystem::path sourcePath(rawPath == nullptr ? "" : rawPath);
+                sourcePath = std::filesystem::absolute(sourcePath).lexically_normal();
+                const auto normalizedTargetDirectory = std::filesystem::absolute(dropTargetDirectory).lexically_normal();
+
+                try
+                {
+                    if (!std::filesystem::exists(sourcePath))
+                        throw std::runtime_error("Dragged path does not exist.");
+                    if (sourcePath == normalizedTargetDirectory)
+                        throw std::runtime_error("Cannot move an item onto itself.");
+
+                    if (std::filesystem::is_directory(sourcePath))
+                    {
+                        const auto sourceString = sourcePath.generic_string();
+                        const auto targetString = normalizedTargetDirectory.generic_string();
+                        if (targetString == sourceString || (targetString.size() > sourceString.size()
+                            && targetString.compare(0, sourceString.size(), sourceString) == 0
+                            && targetString[sourceString.size()] == '/'))
+                        {
+                            throw std::runtime_error("Cannot move a folder into itself.");
+                        }
+                    }
+
+                    MoveProjectPath(state, sourcePath, normalizedTargetDirectory);
+                    state.selectedProjectPath = normalizedTargetDirectory / sourcePath.filename();
+                    SaveProject(*state.project);
+                    SaveProjectWorkspace(state);
+                    RequestProjectTreeRefresh(state);
+                    SetUiStatus(state, "Moved " + sourcePath.string() + " to " + normalizedTargetDirectory.string());
+                }
+                catch (const std::exception& exception)
+                {
+                    SetUiStatus(state, exception.what());
+                    state.outputLog += "[ERROR] " + std::string(exception.what()) + "\n";
+                    if (state.outputEditor != nullptr)
+                        SetLoggerText(*state.outputEditor, state.outputLog);
+                }
+            }
+
+            ImGui::EndDragDropTarget();
+        };
+
         const auto& path = node.path;
         const bool isDirectory = node.isDirectory;
         const auto& name = node.name;
@@ -2304,18 +2411,25 @@ namespace
 
         if (isDirectory)
         {
+            const auto directoryKey = std::filesystem::absolute(path).lexically_normal().generic_string();
+            const bool expanded = state.expandedProjectDirectories.contains(directoryKey);
             const FileTreeRowResult row = DrawFileTreeRow(
                 path.string(),
                 name,
                 depth,
                 isSelected,
                 true,
-                true,
+                expanded,
                 "folder-fill",
                 "folder-opened",
                 ActiveTheme(state.preferences).uiTheme.iconSecondary);
             if (row.clicked)
                 state.selectedProjectPath = path;
+            if (row.toggleOpen)
+                toggleDirectoryExpansion(path, row.open);
+
+            const ImVec2 rowMin = ImGui::GetItemRectMin();
+            const ImVec2 rowMax = ImGui::GetItemRectMax();
 
             if (ImGui::BeginDragDropSource())
             {
@@ -2324,6 +2438,8 @@ namespace
                 ImGui::TextUnformatted(name.c_str());
                 ImGui::EndDragDropSource();
             }
+
+            handleProjectTreeDrop(path, true);
 
             const std::string dirContextId = "##ProjectTreeDirContext" + path.string();
             if (ImGui::BeginPopupContextItem(dirContextId.c_str()))
@@ -2348,6 +2464,22 @@ namespace
                 for (const auto& child : node.children)
                     DrawProjectTreeNode(state, child, depth + 1);
             }
+
+            const ImVec2 windowPos = ImGui::GetWindowPos();
+            const ImVec2 localContentMin = ImGui::GetWindowContentRegionMin();
+            const ImVec2 localContentMax = ImGui::GetWindowContentRegionMax();
+            const ImVec2 contentMin(windowPos.x + localContentMin.x, windowPos.y + localContentMin.y);
+            const ImVec2 contentMax(windowPos.x + localContentMax.x, windowPos.y + localContentMax.y);
+            constexpr float kTreeIndentWidth = 18.0f;
+            constexpr float kTreeRowPaddingX = 6.0f;
+            const auto scopeKey = std::filesystem::absolute(path).lexically_normal().generic_string();
+            const bool hasVisibleChildren = row.open && !node.children.empty();
+            const float contentIndentX = contentMin.x + kTreeRowPaddingX + (depth + 1) * kTreeIndentWidth - 2.0f;
+            const float rowIndentX = contentMin.x + kTreeRowPaddingX + depth * kTreeIndentWidth - 2.0f;
+            state.projectTreeScopeRects[scopeKey] = ProjectTreeScopeRect{
+                .min = ImVec2(hasVisibleChildren ? contentIndentX : rowIndentX, hasVisibleChildren ? rowMax.y - 1.0f : rowMin.y - 2.0f),
+                .max = ImVec2(contentMax.x - 4.0f, hasVisibleChildren ? std::max(rowMax.y + 8.0f, ImGui::GetCursorScreenPos().y) + 2.0f : rowMax.y + 2.0f)
+            };
             return;
         }
 
@@ -2373,6 +2505,8 @@ namespace
             ImGui::TextUnformatted(name.c_str());
             ImGui::EndDragDropSource();
         }
+
+        handleProjectTreeDrop(path.parent_path(), false);
 
         const std::string fileContextId = "##ProjectTreeFileContext" + path.string();
         if (ImGui::BeginPopupContextItem(fileContextId.c_str()))
@@ -2436,8 +2570,42 @@ namespace
                 if (state.projectTreeLoading)
                     ImGui::TextDisabled("Loading project tree...");
 
+                state.projectTreeDropPreviewDirectory.reset();
+                state.projectTreeScopeRects.clear();
+                const ImVec2 treeStart = ImGui::GetCursorScreenPos();
                 for (const auto& entry : state.projectTree)
                     DrawProjectTreeNode(state, entry, 0);
+                const ImVec2 treeEnd = ImGui::GetCursorScreenPos();
+                if (state.project.has_value())
+                {
+                    const auto sourceRootKey = std::filesystem::absolute(sourceRoot).lexically_normal().generic_string();
+                    const ImVec2 windowPos = ImGui::GetWindowPos();
+                    const ImVec2 localContentMin = ImGui::GetWindowContentRegionMin();
+                    const ImVec2 localContentMax = ImGui::GetWindowContentRegionMax();
+                    const ImVec2 contentMin(windowPos.x + localContentMin.x, windowPos.y + localContentMin.y);
+                    const ImVec2 contentMax(windowPos.x + localContentMax.x, windowPos.y + localContentMax.y);
+                    state.projectTreeScopeRects[sourceRootKey] = ProjectTreeScopeRect{
+                        .min = ImVec2(contentMin.x + 4.0f, treeStart.y - 2.0f),
+                        .max = ImVec2(contentMax.x - 4.0f, std::max(treeStart.y + 24.0f, treeEnd.y) + 2.0f)
+                    };
+                }
+
+                if (state.projectTreeDropPreviewDirectory.has_value())
+                {
+                    const auto previewKey = std::filesystem::absolute(*state.projectTreeDropPreviewDirectory).lexically_normal().generic_string();
+                    if (const auto scopeIt = state.projectTreeScopeRects.find(previewKey); scopeIt != state.projectTreeScopeRects.end())
+                    {
+                        ImDrawList* drawList = ImGui::GetForegroundDrawList();
+                        auto scope = scopeIt->second;
+                        if (scope.max.y < scope.min.y)
+                            scope.max.y = scope.min.y + 22.0f;
+                        const ImVec4 fillColorVec = state.preferences.uiTheme.directoryDropHighlight;
+                        const ImU32 fillColor = ImGui::ColorConvertFloat4ToU32(ImVec4(fillColorVec.x, fillColorVec.y, fillColorVec.z, std::max(0.22f, fillColorVec.w)));
+                        const ImU32 lineColor = ImGui::ColorConvertFloat4ToU32(state.preferences.uiTheme.fileDropLine);
+                        drawList->AddRectFilled(scope.min, scope.max, fillColor, 8.0f);
+                        drawList->AddRect(scope.min, scope.max, lineColor, 8.0f, 0, 2.0f);
+                    }
+                }
             }
             else
             {

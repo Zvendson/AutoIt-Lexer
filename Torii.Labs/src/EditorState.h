@@ -15,6 +15,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace AutoItPlus::Editor
@@ -87,6 +88,8 @@ namespace AutoItPlus::Editor
         ImVec4 iconSecondary = ImVec4(0.96f, 0.76f, 0.36f, 1.0f);
         ImVec4 iconNeutral = ImVec4(0.82f, 0.86f, 0.93f, 1.0f);
         ImVec4 iconSuccess = ImVec4(0.40f, 0.86f, 0.64f, 1.0f);
+        ImVec4 directoryDropHighlight = ImVec4(0.59f, 0.82f, 1.0f, 0.18f);
+        ImVec4 fileDropLine = ImVec4(0.59f, 0.82f, 1.0f, 0.95f);
     };
 
     struct EditorPreferences
@@ -216,6 +219,12 @@ namespace AutoItPlus::Editor
         std::vector<ProjectTreeNode> children;
     };
 
+    struct ProjectTreeScopeRect
+    {
+        ImVec2 min = ImVec2(0.0f, 0.0f);
+        ImVec2 max = ImVec2(0.0f, 0.0f);
+    };
+
     struct FileActionState
     {
         enum class Kind
@@ -293,6 +302,9 @@ namespace AutoItPlus::Editor
         std::vector<ProjectTreeNode> projectTree;
         std::future<std::vector<ProjectTreeNode>> projectTreeTask;
         std::filesystem::path projectTreeRoot;
+        std::unordered_set<std::string> expandedProjectDirectories;
+        std::optional<std::filesystem::path> projectTreeDropPreviewDirectory;
+        std::unordered_map<std::string, ProjectTreeScopeRect> projectTreeScopeRects;
         bool projectTreeLoading = false;
         std::unordered_map<std::string, std::string> shortcutOverrides;
         std::unordered_map<std::string, std::string> shortcutEditBuffers;

@@ -121,7 +121,9 @@ namespace AutoItPlus::Editor::Settings
                 {"iconPrimary", JsonFromColor(settings.iconPrimary)},
                 {"iconSecondary", JsonFromColor(settings.iconSecondary)},
                 {"iconNeutral", JsonFromColor(settings.iconNeutral)},
-                {"iconSuccess", JsonFromColor(settings.iconSuccess)}
+                {"iconSuccess", JsonFromColor(settings.iconSuccess)},
+                {"directoryDropHighlight", JsonFromColor(settings.directoryDropHighlight)},
+                {"fileDropLine", JsonFromColor(settings.fileDropLine)}
             };
         }
 
@@ -156,6 +158,8 @@ namespace AutoItPlus::Editor::Settings
             settings.iconSecondary = ColorFromJson(json.value("iconSecondary", Json{}), settings.iconSecondary);
             settings.iconNeutral = ColorFromJson(json.value("iconNeutral", Json{}), settings.iconNeutral);
             settings.iconSuccess = ColorFromJson(json.value("iconSuccess", Json{}), settings.iconSuccess);
+            settings.directoryDropHighlight = ColorFromJson(json.value("directoryDropHighlight", Json{}), settings.directoryDropHighlight);
+            settings.fileDropLine = ColorFromJson(json.value("fileDropLine", Json{}), settings.fileDropLine);
         }
     }
 

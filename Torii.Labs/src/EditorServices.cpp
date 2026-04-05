@@ -945,6 +945,8 @@ namespace AutoItPlus::Editor
         state.selectedProjectPath = GetProjectCodeDirectory(project);
         state.projectTree.clear();
         state.projectTreeRoot.clear();
+        state.expandedProjectDirectories.clear();
+        state.projectTreeDropPreviewDirectory.reset();
         state.projectTreeLoading = false;
         LoadProjectWorkspace(state);
     }
@@ -1082,6 +1084,9 @@ namespace AutoItPlus::Editor
         Settings::WorkspaceSettingsFile(*state.project, workspaceData, pathToRead).Load();
 
         state.buildConfiguration = workspaceData.buildConfiguration;
+        state.expandedProjectDirectories.clear();
+        for (const auto& path : workspaceData.expandedDirectories)
+            state.expandedProjectDirectories.insert(std::filesystem::absolute(path).lexically_normal().generic_string());
         if (workspaceData.openFiles.empty())
             return;
 
@@ -1119,6 +1124,8 @@ namespace AutoItPlus::Editor
                 continue;
             workspaceData.openFiles.push_back(document.path);
         }
+        for (const auto& path : state.expandedProjectDirectories)
+            workspaceData.expandedDirectories.push_back(std::filesystem::path(path));
         Settings::WorkspaceSettingsFile(*state.project, workspaceData, workspacePath).Save();
     }
 

@@ -29,11 +29,15 @@ namespace AutoItPlus::Editor::Settings
         Json openFiles = Json::array();
         for (const auto& path : mData.openFiles)
             openFiles.push_back(ToRelativeProjectPath(path).generic_string());
+        Json expandedDirectories = Json::array();
+        for (const auto& path : mData.expandedDirectories)
+            expandedDirectories.push_back(ToRelativeProjectPath(path).generic_string());
 
         return Json{
             {"buildConfiguration", mData.buildConfiguration == BuildConfiguration::Release ? "Release" : "Debug"},
             {"current", mData.currentIndex},
-            {"openFiles", openFiles}
+            {"openFiles", openFiles},
+            {"expandedDirectories", expandedDirectories}
         };
     }
 
@@ -44,10 +48,16 @@ namespace AutoItPlus::Editor::Settings
             ? BuildConfiguration::Release
             : BuildConfiguration::Debug;
         mData.openFiles.clear();
+        mData.expandedDirectories.clear();
         for (const auto& entry : json.value("openFiles", Json::array()))
         {
             if (entry.is_string())
                 mData.openFiles.push_back(ToAbsoluteProjectPath(entry.get<std::string>()));
+        }
+        for (const auto& entry : json.value("expandedDirectories", Json::array()))
+        {
+            if (entry.is_string())
+                mData.expandedDirectories.push_back(ToAbsoluteProjectPath(entry.get<std::string>()));
         }
     }
 
@@ -59,6 +69,7 @@ namespace AutoItPlus::Editor::Settings
     void WorkspaceSettingsFile::DeserializeLegacyText(const std::string& text)
     {
         mData.openFiles.clear();
+        mData.expandedDirectories.clear();
         std::stringstream stream(text);
         std::string line;
         while (std::getline(stream, line))
