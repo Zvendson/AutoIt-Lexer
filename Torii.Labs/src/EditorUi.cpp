@@ -312,6 +312,7 @@ namespace
             {"file-symlink-file", "file-earmark-fill"},
             {"folder-opened", "folder2-open"},
             {"group-by-ref-type", "list-nested"},
+            {"hashtag", "hash"},
             {"list-tree", "list-nested"},
             {"new-file", "file-earmark-plus-fill"},
             {"new-folder", "folder-plus"},
